@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 
-<title>Atlas v45 — Exploration & Bilingue</title>
+<title>Atlas — Les chiffres du monde</title>
 <meta name="description" content="Atlas est une carte interactive des grandes statistiques mondiales : obésité, espérance de vie, PIB, CO₂, internet, fertilité — voyage à travers les années, compare les pays, partage tes trouvailles.">
 <meta name="theme-color" content="#0a0e14">
 
@@ -12,25 +12,24 @@
 <meta property="og:description" content="Une carte mondiale qui voyage dans le temps. Plus de 100 explorations reliées, sources explicites, comparaison de pays.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="fr_FR">
-<!-- DÉPLOIEMENT : remplace ces deux URLs par ton vrai domaine + l'image hébergée (1200×630).
-     L'aperçu visuel (WhatsApp, Facebook, etc.) ne s'affiche QUE si l'image est servie
-     à une URL publique absolue en https et que le site est en ligne. -->
-<meta property="og:url" content="https://REMPLACER-PAR-TON-DOMAINE.com/">
-<meta property="og:image" content="https://REMPLACER-PAR-TON-DOMAINE.com/atlas-preview.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<!-- DÉPLOIEMENT WEB : quand le domaine définitif existe, ajouter ici
+     og:url + og:image (1200×630, URL https absolue) + og:image:width/height.
+     Aucune balise placeholder n'est publiée en attendant. -->
 <meta property="og:site_name" content="Atlas">
 
-<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Atlas — la carte interactive des chiffres du monde">
 <meta name="twitter:description" content="Voyage dans les chiffres du monde. Plus de 100 explorations reliées, courbes historiques, lieux et cultures.">
-<meta name="twitter:image" content="https://REMPLACER-PAR-TON-DOMAINE.com/atlas-preview.png">
 
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0e14'/%3E%3Ctext x='50' y='66' font-family='Georgia,serif' font-size='62' font-style='italic' text-anchor='middle' fill='%23f4f1ea'%3EA%3C/text%3E%3C/svg%3E">
 
+<!-- Polices web non bloquantes : hors ligne / en content://, Atlas démarre
+     immédiatement sur les piles Georgia / Helvetica / monospace déclarées
+     dans --serif / --sans / --mono, sans attendre le réseau. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
 
 <!-- Dépendances critiques intégrées : Atlas démarre aussi hors ligne et via content://. -->
 <script id="atlas-vendor-d3">// https://d3js.org v7.9.0 Copyright 2010-2023 Mike Bostock
@@ -2108,14 +2107,10 @@ body.mob.mob-light.atlas-android-crisp .field-mobile-legend{background:#fff!impo
     </button>
     <button class="btn ghost" id="aboutBtn" aria-label="À propos d'Atlas">À propos</button>
     <button class="btn ghost" id="sourcesBtn" aria-label="Voir les sources">Sources</button>
-    <button class="btn ghost icon-only wip" id="shotBtn" aria-label="Capturer la carte en image (fonctionnalité en travaux)" title="Capturer la carte (PNG) — fonctionnalité en travaux" style="opacity:.45">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-    </button>
     <button class="btn" id="shareBtn" aria-label="Partager cette vue">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
       Partager
     </button>
-    <button class="btn primary" id="proBtn">Atlas+</button>
   </div>
 </nav>
 
@@ -2320,7 +2315,7 @@ body.mob.mob-light.atlas-android-crisp .field-mobile-legend{background:#fff!impo
         </div>
       </div>
       <div class="debug-body"></div>
-      <div class="debug-foot">Colle ce log à ton assistant pour qu'il diagnostique.</div>
+      <div class="debug-foot">Copie ce log et joins-le à ton signalement de bug.</div>
     `;
     document.body.appendChild(panel);
     ui = { fab, panel, body: panel.querySelector('.debug-body') };
@@ -17629,7 +17624,6 @@ function setupUI(){
     }
   });
   { const shot = $('shotBtn'); if (shot) shot.onclick = screenshot_capture; }
-  $('proBtn').onclick = openPro;
   $('sourcesBtn').onclick = openSources;
   $('shareBtn').onclick = doShare;
 
@@ -18300,6 +18294,8 @@ function openAbout(){
     <h3>Sources</h3>
     <p>Les données viennent de sources identifiées : <b>Our World in Data</b>, <b>World Bank</b>, <b>WHO</b>, <b>UN</b>, <b>FAO</b>, ainsi que <b>NASA GIBS / POWER</b> et <b>AWS Open Data</b> pour les champs continus. Le bouton <i>Sources</i> expose la provenance, la période, les transformations et la licence du thème actif.</p>
     <p>Atlas ne transforme jamais une valeur absente en zéro et ne l’invente pas. Les listes éditoriales ou non exhaustives sont signalées comme telles ; une source chargée signifie seulement qu’elle a répondu, pas qu’Atlas la déclare infaillible.</p>
+    <h3>Données personnelles</h3>
+    <p>Atlas ne demande aucun compte et ne collecte aucune donnée personnelle : préférences, favoris et progression restent enregistrés uniquement sur cet appareil. Les données affichées sont téléchargées directement auprès des sources publiques citées ci-dessus ; comme pour tout site, ces services voient les requêtes techniques nécessaires (adresse IP). Aucun traceur publicitaire, aucune revente de données.</p>
     <h3>Comment lire la carte</h3>
     <ul>
       <li>Couleur claire → valeur basse · couleur dense / sombre → valeur haute</li>
@@ -18581,24 +18577,6 @@ function openSettings(){
       pt_debugZoomUpdate();
     }
   };
-}
-
-function openPro(){
-  modal(`
-    <button class="modal-close" onclick="closeModal()" aria-label="Fermer">×</button>
-    <h2>Atlas+ <span style="font-style:italic;color:var(--muted);font-size:18px">en construction</span></h2>
-    <div id="aplusSim" style="margin:10px 0 4px"></div>
-    <p>Atlas est gratuit et le restera pour son usage de base — y compris la comparaison jusqu'à 12 pays, le globe 3D, et l'export par lien partagé. Atlas+ ajoutera, quand ce sera prêt :</p>
-    <ul>
-      <li>Plus de thèmes (santé, éducation, finance, démographie fine)</li>
-      <li>Carte de chaleur multi-thématique (corrélations entre indicateurs)</li>
-      <li>Export PNG / SVG haute résolution sans watermark</li>
-      <li>Génération de rapports PDF par pays avec narration auto</li>
-      <li>Téléchargement des données filtrées (CSV, Excel)</li>
-      <li>API d'accès programmatique pour data scientists</li>
-    </ul>
-    <p style="margin-top:14px"><b>Tarif visé : 4,99 €</b> pour soutenir l'hébergement et le développement. <a href="mailto:contact@example.com">Préviens-moi quand ça sort</a> et tu auras le premier mois offert.</p>
-  `);
 }
 
 function atlasActiveTrustSnapshot(){
@@ -19663,9 +19641,6 @@ init().catch(e => {
     background:linear-gradient(90deg,transparent 2%,#ff5a1e 22%,#ffcf8a 50%,#ff5a1e 78%,transparent 98%);
     background-size:220% 100%;animation:eeggFlow 4s linear infinite;opacity:.85;pointer-events:none}
   body.eegg-on .theme-pick, body.eegg-on .search, body.eegg-on .view-switch-wrap{display:none !important}
-  body.eegg-on #proBtn{background:linear-gradient(115deg,#ff5a1e,#ffb066,#ff7a2e,#e0431f);
-    background-size:280% 100%;animation:eeggFlow 4.5s ease infinite;color:#1a0c04;
-    border-color:transparent;box-shadow:0 0 18px rgba(255,110,30,.35)}
   body.eegg-on .btn.ghost:hover{border-color:rgba(255,160,90,.6);color:#ffd9a8}
   @keyframes eeggFlow{0%{background-position:0% 50%}100%{background-position:220% 50%}}
 
@@ -20990,73 +20965,6 @@ init().catch(e => {
     ensureUI();
     setInterval(()=>{if(!document.body.classList.contains('atlas-realtime-open'))refresh(false)}, 700);
     addEventListener('resize', place);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
-})();
-
-/* ===== ATLAS PLUS (attention sobre + simulation d'abonnement) ===== */
-(function(){
-  'use strict';
-  if (window.__ATLAS_APLUS) return; window.__ATLAS_APLUS = true;
-  const LS='atlas_plus_sub';
-  const sub=()=>{try{return localStorage.getItem(LS)==='1'}catch(_){return false}};
-  const css=document.createElement('style');
-  css.textContent=`
-  #proBtn{position:relative;overflow:hidden}
-  #proBtn.aplus-shine{box-shadow:0 0 16px rgba(255,255,255,.22),
-    0 0 30px color-mix(in srgb,var(--gold,#e9c46a) 45%,transparent)}
-  #proBtn.aplus-shine::after{content:'';position:absolute;top:-45%;bottom:-45%;width:62%;
-    left:-75%;transform:skewX(-18deg);pointer-events:none;
-    background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.55) 50%,transparent 100%);
-    animation:aplusSweep 2.1s ease-in-out infinite}
-  @keyframes aplusSweep{0%{left:-60%}58%,100%{left:130%}}
-  #proBtn.aplus-sub{
-    background:linear-gradient(115deg,#ff9d70,#ffd57e,#93e0a4,#7cc3f2,#c9a3f5) !important;
-    border:1px solid rgba(255,255,255,.38);color:#14162a;font-weight:700;text-shadow:none}
-  #proBtn.aplus-sub:hover{filter:saturate(1.3) brightness(1.07)}
-  @media (prefers-reduced-motion:reduce){ #proBtn.aplus-shine::after{animation:none;display:none} }
-  .aplus-sim-box{border:1px dashed color-mix(in srgb,var(--gold,#e9c46a) 45%,transparent);
-    border-radius:12px;padding:10px 12px;font-size:13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .aplus-sim-box b.on{color:#7bc47f}
-  .aplus-sim-btn{cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;border-radius:999px;padding:7px 13px;
-    border:1px solid color-mix(in srgb,var(--gold,#e9c46a) 55%,transparent);
-    background:color-mix(in srgb,var(--gold,#e9c46a) 14%,transparent);color:inherit}`;
-  document.head.appendChild(css);
-
-  const btn=()=>document.getElementById('proBtn');
-  let shineT=null, shineOff=null, hoverOn=false;
-  function allowShine(){ return !sub() && !document.body.classList.contains('eegg-on')
-      && !document.querySelector('.emb-lbx'); }
-  function paintBtn(){ const b=btn(); if(!b) return;
-    b.classList.toggle('aplus-sub', sub());
-    if (sub()) b.classList.remove('aplus-shine');
-  }
-  function shine(ms){ const b=btn(); if(!b||!allowShine()) return;
-    b.classList.add('aplus-shine');
-    clearTimeout(shineOff);
-    shineOff=setTimeout(()=>{ if(!hoverOn) b.classList.remove('aplus-shine'); }, ms);
-  }
-  function schedule(){ clearTimeout(shineT);
-    const wait=(300+Math.random()*300)*1000;              // 5 à 10 min
-    shineT=setTimeout(()=>{ shine((15+Math.random()*15)*1000); schedule(); }, wait);
-  }
-  function paintSim(){ const z=document.getElementById('aplusSim'); if(!z) return;
-    z.innerHTML='<div class="aplus-sim-box"><span>Simulation abonnement (test) — état : '
-      +'<b class="'+(sub()?'on':'')+'">'+(sub()?'abonné ✓':'non abonné')+'</b></span>'
-      +'<button type="button" class="aplus-sim-btn" id="aplusToggle">'
-      +(sub()?'Se désabonner (simu)':'S\u2019abonner (simu)')+'</button></div>';
-  }
-  window.__aplusSet=v=>{try{localStorage.setItem(LS, v?'1':'0')}catch(_){ }paintBtn(); paintSim();
-    if(!v) schedule(); else clearTimeout(shineT); };
-  document.addEventListener('click',e=>{
-    if(e.target && e.target.id==='aplusToggle'){ window.__aplusSet(!sub()); }
-  });
-  function boot(){ const b=btn(); if(!b) return;
-    paintBtn();
-    b.addEventListener('mouseenter',()=>{ hoverOn=true; if(allowShine()) b.classList.add('aplus-shine'); });
-    b.addEventListener('mouseleave',()=>{ hoverOn=false; if(!sub()) setTimeout(()=>{ if(!hoverOn) b.classList.remove('aplus-shine'); },900); });
-    b.addEventListener('click',()=>setTimeout(paintSim,0));
-    if(!sub()) schedule();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
@@ -39243,7 +39151,6 @@ body.iceegg-offanim .app>.resizer,body.iceegg-offanim .app>.panel{transition:opa
 body.iceegg-on .nav{z-index:610}
 body.iceegg-on .nav:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,transparent,#86d7f1,#eefcff,#86d7f1,transparent);background-size:220% 100%;animation:iceFlow 5s linear infinite}
 body.iceegg-on .theme-pick,body.iceegg-on .search,body.iceegg-on .view-switch-wrap{display:none!important}
-body.iceegg-on #proBtn{background:linear-gradient(115deg,#70c4e6,#e6faff,#8fd8ec);color:#09202e;border-color:transparent}
 body.iceegg-on #mapArea>:not(#map):not(.starfield){opacity:0!important;pointer-events:none!important}
 body.iceegg-on #mapArea>:not(#map):not(.starfield),body.iceegg-offanim #mapArea>:not(#map):not(.starfield){transition:opacity .45s ease}
 body.iceegg-on #map{filter:saturate(.3) hue-rotate(145deg) brightness(.76) contrast(1.14) drop-shadow(0 0 18px rgba(177,230,249,.34))}
