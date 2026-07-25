@@ -60,7 +60,7 @@ input,select{font:inherit;color:inherit}
   --ink:#f4f1ea;
   --ink-soft:#c8c5be;
   --muted:#7d8493;
-  --muted-2:#5a6171;
+  --muted-2:#8a94a3;
   --accent:#e8b059;          /* fauve, change avec le thème */
   --accent-soft:#3a2d18;
   --no-data:#1a212c;
@@ -95,7 +95,7 @@ body{
   position:relative;z-index:50;
   height:60px;
   display:flex;align-items:center;gap:14px;
-  padding:0 20px;
+  padding:0 max(20px,env(safe-area-inset-right)) 0 max(20px,env(safe-area-inset-left));
   background:rgba(10,14,20,.85);
   backdrop-filter:saturate(160%) blur(14px);
   -webkit-backdrop-filter:saturate(160%) blur(14px);
@@ -1132,11 +1132,11 @@ body.intro-hide-map #map{ opacity:0; }
 
 
 .toast{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);
   background:var(--card);border:1px solid var(--line);
   border-radius:10px;padding:10px 16px;
   font-size:13px;color:var(--ink);
-  z-index:5000;opacity:0;pointer-events:none;
+  z-index:9000;opacity:0;pointer-events:none;
   transition:opacity .2s, transform .2s;
   box-shadow:0 16px 32px rgba(0,0,0,.4);
 }
@@ -1734,6 +1734,22 @@ body.intro-hide-map #map{ opacity:0; }
 .atlas-suggestion-list{margin-top:10px}
 .atlas-suggestion .discover-label{color:var(--ink)}
 
+/* ── Accessibilité ──
+   1. Les petits boutons gardent leur taille visuelle mais offrent une zone
+      tactile d'au moins 44 px via un pseudo-élément transparent. */
+.coverage-panel-reset,.coverage-panel-close,.panel-controls .ctrl,
+.zoom-ctrl button,.btn.icon-only,.year-bar .play,.year-bar .latest,.yr-coverage{position:relative}
+.coverage-panel-reset::after,.coverage-panel-close::after,.panel-controls .ctrl::after,
+.zoom-ctrl button::after,.btn.icon-only::after,.year-bar .play::after,
+.year-bar .latest::after,.yr-coverage::after{
+  content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:max(100%,44px);height:max(100%,44px);
+}
+/*  2. Les lignes interactives qui neutralisent l'outline retrouvent un
+      indicateur de focus clavier conforme (2.4.11). */
+.top-related-chip:focus-visible,.evt-row:focus-visible,.brk-row:focus-visible,
+.iceegg-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
 </style>
 
 <style id="atlas-live-discovery-style">
@@ -2103,7 +2119,7 @@ body.mob.mob-light.atlas-android-crisp .field-mobile-legend{background:#fff!impo
 <main class="app loading" id="app">
   <section class="map-area" id="mapArea" aria-label="Carte mondiale">
     <div class="starfield" aria-hidden="true"></div>
-    <canvas id="fieldCanvas" aria-label="Champ continu reprojeté sur le globe"></canvas>
+    <canvas id="fieldCanvas" role="img" aria-label="Champ continu reprojeté sur le globe"></canvas>
     <svg id="map" role="img" aria-label="Carte du monde interactive">
       <defs>
         <!-- Sphere base: radial gradient simulating light from upper-left -->
@@ -2148,8 +2164,8 @@ body.mob.mob-light.atlas-android-crisp .field-mobile-legend{background:#fff!impo
       <div class="coverage-panel-hint">Clique sur le graphique pour sauter à une année · molette pour zoomer · glisser pour déplacer</div>
     </div>
 
-    <div class="loader" id="loader"><span class="spin"></span><span id="loaderText">Chargement…</span></div>
-    <div class="error-banner" id="errorBanner"></div>
+    <div class="loader" id="loader" aria-live="polite"><span class="spin"></span><span id="loaderText">Chargement…</span></div>
+    <div class="error-banner" id="errorBanner" role="alert"></div>
 
     <!-- INTRO ANIMATION overlay: a cinematic arrival shown on each fresh load.
          Self-contained & removable (delete this block + .intro CSS + the intro_*
@@ -21168,7 +21184,7 @@ init().catch(e => {
     display:grid;place-items:center;font-size:13px;color:#ece7dc;
     background:rgba(10,12,24,.72);border:1px solid rgba(255,255,255,.2);opacity:0;transition:opacity .15s}
   .emb-card.pinned .emb-media:hover .emb-zoomhint{opacity:1}
-  .emb-lbx{position:fixed;inset:0;z-index:900;background:rgba(4,6,14,.84);
+  .emb-lbx{position:fixed;inset:0;z-index:5640;background:rgba(4,6,14,.84);
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .3s;cursor:zoom-out}
   .emb-lbx.on{opacity:1}
   .emb-lbx img{position:fixed;object-fit:contain;border-radius:12px;
@@ -27643,7 +27659,7 @@ const CSS=`
   background-image:linear-gradient(100deg,var(--bg-soft),color-mix(in srgb,var(--accent) 12%,var(--bg-soft)),var(--bg-soft))}
 .emb4-top-panel .top-row.emb4-loading .emb4-thumb>*{visibility:hidden}
 .emb3-video-btn{order:4}
-.emb3-modal{position:fixed;inset:0;z-index:1400;display:grid;place-items:center;padding:18px;
+.emb3-modal{position:fixed;inset:0;z-index:5650;display:grid;place-items:center;padding:18px;
   background:rgba(3,5,12,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .emb3-modal-shell{width:min(980px,96vw);max-height:94dvh;overflow:auto;border-radius:18px;
   background:linear-gradient(165deg,#14182a,#080a13);border:1px solid rgba(255,255,255,.16);
@@ -34848,7 +34864,7 @@ ${s}${o}`+n.repeat(t)+`${s}`,a}function NN(t,e,r,s){return`${e}${s}`+r.repeat(t)
   .v43-sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
   .emb3-point[aria-busy="true"]{min-height:92px}.emb3-point[data-state="empty"]{border-style:dashed}
 
-  .v43-image-modal{position:fixed;inset:0;z-index:1505;display:grid;place-items:center;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));background:#02040af2;color:#fff}
+  .v43-image-modal{position:fixed;inset:0;z-index:5660;display:grid;place-items:center;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));background:#02040af2;color:#fff}
   .v43-image-shell{width:min(1040px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.18);border-radius:20px;background:#090d17;box-shadow:0 30px 100px rgba(0,0,0,.8)}
   .v43-image-head{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.11)}
   .v43-image-head strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 18px/1.2 var(--serif,serif)}
@@ -39189,9 +39205,9 @@ body.iceegg-on .iceegg-navtitle{display:flex}body.iceegg-on.iceegg-nav-on .iceeg
 .iceegg-chip:nth-child(1){left:1%;top:12%}.iceegg-chip:nth-child(2){right:1%;top:14%}.iceegg-chip:nth-child(3){left:2%;top:46%}.iceegg-chip:nth-child(4){right:2%;top:48%}.iceegg-chip:nth-child(5){left:7%;bottom:2%}.iceegg-chip:nth-child(6){right:7%;bottom:2%}
 .iceegg-exit{position:fixed;z-index:600;left:50%;bottom:calc(13px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:8px;opacity:0;transition:opacity .7s ease;pointer-events:none}
 #atlasIceAgeRoot.ui .iceegg-exit{opacity:1;pointer-events:auto}.iceegg-exit button{min-height:43px;padding:9px 15px;border:1px solid rgba(185,230,247,.35);border-radius:999px;background:rgba(5,25,40,.82);color:#dff8ff;font:700 11px/1 var(--sans);backdrop-filter:blur(10px)}
-.iceegg-detail-veil{position:fixed;inset:0;z-index:680;background:rgba(1,10,18,.72);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .3s}
+.iceegg-detail-veil{position:fixed;inset:0;z-index:686;background:rgba(1,10,18,.72);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .3s}
 .iceegg-detail-veil.on{opacity:1;pointer-events:auto}
-.iceegg-detail{position:fixed;z-index:685;left:50%;top:50%;width:min(650px,92vw);max-height:min(82vh,760px);display:flex;flex-direction:column;transform:translate(-50%,-46%) scale(.95);opacity:0;pointer-events:none;border:1px solid rgba(177,226,243,.35);border-radius:22px;background:linear-gradient(155deg,rgba(8,32,49,.98),rgba(4,18,31,.98));box-shadow:0 40px 100px rgba(0,4,12,.68);transition:opacity .3s,transform .4s cubic-bezier(.2,.9,.25,1.1)}
+.iceegg-detail{position:fixed;z-index:687;left:50%;top:50%;width:min(650px,92vw);max-height:min(82vh,760px);display:flex;flex-direction:column;transform:translate(-50%,-46%) scale(.95);opacity:0;pointer-events:none;border:1px solid rgba(177,226,243,.35);border-radius:22px;background:linear-gradient(155deg,rgba(8,32,49,.98),rgba(4,18,31,.98));box-shadow:0 40px 100px rgba(0,4,12,.68);transition:opacity .3s,transform .4s cubic-bezier(.2,.9,.25,1.1)}
 .iceegg-detail.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
 .iceegg-detail-head{display:flex;align-items:center;gap:12px;padding:18px 18px 11px}.iceegg-detail-icon{font-size:28px}.iceegg-detail-head h2{flex:1;margin:0;font:500 clamp(22px,5vw,31px)/1.05 var(--serif)}.iceegg-detail-x{width:42px;height:42px;border:1px solid rgba(177,226,243,.25);border-radius:13px;background:rgba(255,255,255,.04);color:#eafaff;font-size:19px}
 .iceegg-detail-body{overflow:auto;padding:3px 19px 18px}.iceegg-detail-body p{margin:0 0 14px;color:#c5e3ee;font:520 13.5px/1.65 var(--sans)}.iceegg-metric{margin:5px 0 14px;padding:15px;border:1px solid rgba(177,226,243,.18);border-radius:16px;background:rgba(151,217,240,.07)}.iceegg-metric strong{display:block;font:500 clamp(34px,8vw,56px)/1 var(--serif);color:#e8fbff}.iceegg-metric span{display:block;margin-top:7px;color:#8fbdd0;font:700 9.5px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase}
@@ -40299,7 +40315,7 @@ body.atlas-perf-economy .map-area.globe-mode::after{display:none!important}
      Pour une future livraison : changer RELEASE.id/date/notes.
      ============================================================ -->
 <style id="atlas-v45-release-notes-style">
-#atlasReleaseNotes{position:fixed;inset:0;z-index:1700;display:none;place-items:center;padding:clamp(10px,3vw,28px);
+#atlasReleaseNotes{position:fixed;inset:0;z-index:5700;display:none;place-items:center;padding:clamp(10px,3vw,28px);
   color:#f4f2ee;background:rgba(2,5,11,.78);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 #atlasReleaseNotes.on{display:grid}
 body.atlas-release-open{overflow:hidden!important}
@@ -40578,7 +40594,7 @@ body.atlas-release-open{overflow:hidden!important}
   font-size:9.5px;line-height:1.35}
 .emb5-media-note::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto}
 
-#atlasModelViewer{position:fixed;inset:0;z-index:1900;display:none;place-items:center;padding:clamp(8px,2.4vw,25px);
+#atlasModelViewer{position:fixed;inset:0;z-index:5800;display:none;place-items:center;padding:clamp(8px,2.4vw,25px);
   color:#f4f4f1;background:rgba(1,4,9,.88);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px)}
 #atlasModelViewer.on{display:grid}
 .emb5-model-shell{width:min(980px,100%);height:min(760px,94dvh);display:grid;grid-template-rows:auto minmax(0,1fr) auto;
@@ -40639,7 +40655,7 @@ body.atlas-perf-full .map-area.globe-mode .sphere-shade{opacity:1}
 body.atlas-perf-full.atlas-cine-awake .map-area.globe-mode .atlas-cine-sweep{display:block;z-index:4;inset:-25% auto -25% -34%;
   width:38%;transform:skewX(-13deg);background:linear-gradient(90deg,transparent,rgba(168,220,255,.2),rgba(255,236,184,.34),transparent);
   filter:blur(13px);animation:atlasCineSweep 1.65s cubic-bezier(.2,.72,.28,1) both}
-#atlasCineToast{position:fixed;z-index:1840;left:50%;top:max(76px,calc(env(safe-area-inset-top) + 62px));
+#atlasCineToast{position:fixed;z-index:5900;left:50%;top:max(76px,calc(env(safe-area-inset-top) + 62px));
   transform:translate(-50%,-12px) scale(.96);display:flex;gap:9px;align-items:center;max-width:min(88vw,430px);
   padding:10px 14px;border:1px solid rgba(171,218,255,.35);border-radius:99px;background:rgba(4,10,19,.9);
   color:#eff8ff;font-size:11px;font-weight:700;letter-spacing:.03em;box-shadow:0 13px 42px rgba(0,0,0,.5),0 0 28px rgba(93,174,255,.18);
