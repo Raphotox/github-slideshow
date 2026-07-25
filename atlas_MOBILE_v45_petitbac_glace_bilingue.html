@@ -2600,6 +2600,7 @@ function getRecentThemes(){
     const raw = localStorage.getItem(RECENT_STORAGE_KEY);
     if (raw) recent = JSON.parse(raw);
   } catch (e) { /* localStorage may be disabled */ }
+  if (!Array.isArray(recent)) recent = [];
   // Keep only valid keys (surface, point or ranking themes that still exist)
   recent = recent.filter(_recentKeyValid);
   // Pad with defaults if we don't have enough yet
@@ -2617,6 +2618,7 @@ function recordThemeView(key){
     const raw = localStorage.getItem(RECENT_STORAGE_KEY);
     if (raw) recent = JSON.parse(raw);
   } catch (e) { /* ignore */ }
+  if (!Array.isArray(recent)) recent = [];
   // Move to front (or insert)
   recent = recent.filter(k => k !== key);
   recent.unshift(key);
@@ -3569,10 +3571,6 @@ function rotationInterpolator(startRot, targetRot){
 
 // Trim pointless trailing zeros from a French-formatted decimal string:
 // "80,0" → "80", "4,00" → "4", "4,50" → "4,5", "1 234" → "1 234" (untouched).
-function trimZeros(s){
-  if (s.indexOf(',') === -1) return s;            // no decimal part
-  return s.replace(/,?0+$/, '');                  // drop trailing zeros (+ comma if all gone)
-}
 function fmtDecimal(v,digits){
   return Number(v).toLocaleString(atlasLocale(),{minimumFractionDigits:0,maximumFractionDigits:digits});
 }
@@ -3594,11 +3592,6 @@ function fmt(v, theme = state.theme){
   else if (abs >= 10) body = fmtDecimal(v,1);
   else body = fmtDecimal(v,2);
   return body + u;
-}
-function fmtSigned(v, theme){
-  if (!Number.isFinite(v)) return '—';
-  const sign = v > 0 ? '+' : (v < 0 ? '' : '');
-  return sign + fmt(v, theme);
 }
 function fmtPct(v){
   if (!Number.isFinite(v)) return '—';
@@ -3634,10 +3627,13 @@ function revealApp(){
 }
 function showError(msg, retryFn){
   const e = $('errorBanner');
+  if (!e) return;
   e.innerHTML = escapeHtml(msg) + (retryFn ? ' <button id="retryBtn">Réessayer</button>' : '');
   e.classList.add('show');
-  if (retryFn) $('retryBtn').onclick = () => { e.classList.remove('show'); retryFn(); };
-  setTimeout(() => e.classList.remove('show'), 9000);
+  const retryBtn = $('retryBtn');
+  if (retryFn && retryBtn) retryBtn.onclick = () => { e.classList.remove('show'); retryFn(); };
+  clearTimeout(showError._t);
+  showError._t = setTimeout(() => e.classList.remove('show'), 9000);
 }
 function hideError(){ $('errorBanner').classList.remove('show'); }
 
@@ -3970,7 +3966,10 @@ async function fetchCsv(theme, signal){
       : [u, ...CORS_PROXIES.map(p => p(u))];                          // http(s) → direct first, proxy fallback
     for (const candidate of candidates){
       try {
-        const res = await fetch(candidate, { signal });
+        // Un proxy muet ne doit jamais suspendre l'app : 12 s max par candidat.
+        const timeoutSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(12000) : null;
+        const mergedSignal = signal && timeoutSignal && AbortSignal.any ? AbortSignal.any([signal, timeoutSignal]) : (signal || timeoutSignal || undefined);
+        const res = await fetch(candidate, { signal: mergedSignal });
         if (!res.ok){ lastErr = new Error('HTTP ' + res.status); continue; }
         const text = await res.text();
         // Reject HTML responses (404 error pages, captcha walls, etc.) and JSON
@@ -11463,10 +11462,6 @@ function pt_wikiSearchUrl(name){
   const lang = atlasLanguage();
   return `https://${lang}.wikipedia.org/w/index.php?search=` + encodeURIComponent(name);
 }
-function pt_wikiArticleUrl(title){
-  const lang = atlasLanguage();
-  return `https://${lang}.wikipedia.org/wiki/` + encodeURIComponent(title.replace(/ /g, '_'));
-}
 function pt_pointLinks(d, t){
   // default Wikipedia link = a SEARCH (always valid); upgraded to a direct
   // article async if the exact page is confirmed.
@@ -11750,6 +11745,7 @@ function pt_setLegend(){
 }
 
 function pt_enter(key){
+  stopPlay();
   if (state.mode === 'field') fld_exit();
   const carry = currentSelectedCountry();  // keep the selected country across the mode switch
   if (brk_active()) brk_clear();
@@ -11859,6 +11855,7 @@ function top_countriesWithData(){
 }
 
 function top_enter(key){
+  stopPlay();
   if (state.mode === 'field') fld_exit();
   if (!TOP_THEMES[key]) return;
   const carry = currentSelectedCountry();  // keep the selected country across the mode switch
@@ -12609,6 +12606,7 @@ function evt_buildDataMap(theme){
   return out;
 }
 function evt_enter(key){
+  stopPlay();
   if (state.mode === 'field') fld_exit();
   const t = EVENT_THEMES[key];
   if (!t) return;
@@ -13321,6 +13319,7 @@ function brk_retry(){
   t._loaded=false;t._index=null;t._loadPromise=null; brk_enter(t.key,true);
 }
 async function brk_enter(key,force=false){
+  stopPlay();
   if (state.mode === 'field') fld_exit();
   const t=BREAKDOWN_THEMES[key]; if(!t)return;
   if(brk_active()&&state.breakdownTheme===key&&!force){syncThemeInput();return;}
@@ -13716,7 +13715,7 @@ function fld_renderPanel(){
 }
 async function fld_load(token){const t=fld_theme();if(!t)return;state.fieldStatus='loading';state.fieldError=null;fld_setLegend();fld_renderPanel();try{let frame;if(t.loader==='gibs-image')frame=await fld_loadGibs(t,token,state.fieldAbortCtrl?.signal);else frame={kind:'terrarium',actualTime:'',fromCache:false};if(!frame||token!==state.fieldLoadToken)return;state.fieldFrame=frame;if(frame.kind==='terrarium')fld_syncTileStatus();else state.fieldStatus=frame.fromCache?'cache':'source';state.fieldError=frame.networkError||state.fieldError||null;fld_setLegend();fld_scheduleRender(false);if(state.fieldProbe){fld_refreshProbe();if(t.powerParameter&&frame.actualTime)fld_refineProbe(state.fieldProbe);else if(t.powerParameter&&!frame.actualTime){state.fieldProbe.awaitingFrame=false;state.fieldProbe.quality=state.fieldProbe.value!=null?'Palette NASA · valeur approchée':'Période exacte indisponible · pas de nombre inventé';}}fld_renderPanel()}catch(err){if(token!==state.fieldLoadToken||err.name==='AbortError')return;state.fieldStatus='error';state.fieldError=String(err.message||err);fld_renderPanel();fld_updateMobileLegend()}}
 function fld_exit({clearTheme=true}={}){if(state.fieldAbortCtrl)try{state.fieldAbortCtrl.abort()}catch(_){}if(state.fieldProbeAbort)try{state.fieldProbeAbort.abort()}catch(_){}state.fieldLoadToken++;_fldTileFailures.clear();clearTimeout(_fldSettleTimer);if(_fldRenderRaf)cancelAnimationFrame(_fldRenderRaf);_fldRenderRaf=0;document.body.classList.remove('field-active');const c=$('fieldCanvas');if(c){const x=c.getContext('2d');x?.clearRect(0,0,c.width,c.height)}state.mapGroup?.selectAll('g.field-probe-marker').remove();state.fieldFrame=null;state.fieldProbe=null;state.fieldError=null;state.fieldStatus='idle';state.fieldCacheSeen=false;state.fieldNetworkSeen=false;state.fieldTileErrors=0;if(clearTheme)state.fieldTheme=null;if(state.mode==='field')state.mode='choropleth'}
-function fld_enter(key){const t=FIELD_THEMES[key];if(!t)return Promise.resolve();if(fld_active()&&state.fieldTheme===key){syncThemeInput();return Promise.resolve()}if(fld_active())fld_exit();if(state.abortCtrl)try{state.abortCtrl.abort()}catch(_){}if(brk_active())brk_clear();_fldTileFailures.clear();state.eventTheme=null;state.eventIndex=new Map();state.eventById=new Map();state.mode='field';state.fieldTheme=key;state.currentKey='fld:'+key;state.theme=null;state.dataMap=new Map();state.globalMin=null;state.globalMax=null;state.selected=null;state.compareList=[];state.showLatest=true;state.selectedYear=null;state.fieldFrame=null;state.fieldProbe=null;state.fieldError=null;state.fieldStatus='loading';state.fieldCacheSeen=false;state.fieldNetworkSeen=false;state.fieldTileErrors=0;state.fieldAbortCtrl=new AbortController();state.fieldLoadToken++;const token=state.fieldLoadToken;document.body.classList.add('field-active');recordThemeView('fld:'+key);document.documentElement.style.setProperty('--accent',t.accent);document.documentElement.style.setProperty('--ramp-low',t.palette[0][1]);document.documentElement.style.setProperty('--ramp-mid',t.palette[Math.floor(t.palette.length/2)][1]);document.documentElement.style.setProperty('--ramp-high',t.palette[t.palette.length-1][1]);syncThemeInput();setupYearBar();drawMap();fld_setLegend();fld_renderPanel();renderRanking();updateUrl();return fld_load(token)}
+function fld_enter(key){stopPlay();const t=FIELD_THEMES[key];if(!t)return Promise.resolve();if(fld_active()&&state.fieldTheme===key){syncThemeInput();return Promise.resolve()}if(fld_active())fld_exit();if(state.abortCtrl)try{state.abortCtrl.abort()}catch(_){}if(brk_active())brk_clear();_fldTileFailures.clear();state.eventTheme=null;state.eventIndex=new Map();state.eventById=new Map();state.mode='field';state.fieldTheme=key;state.currentKey='fld:'+key;state.theme=null;state.dataMap=new Map();state.globalMin=null;state.globalMax=null;state.selected=null;state.compareList=[];state.showLatest=true;state.selectedYear=null;state.fieldFrame=null;state.fieldProbe=null;state.fieldError=null;state.fieldStatus='loading';state.fieldCacheSeen=false;state.fieldNetworkSeen=false;state.fieldTileErrors=0;state.fieldAbortCtrl=new AbortController();state.fieldLoadToken++;const token=state.fieldLoadToken;document.body.classList.add('field-active');recordThemeView('fld:'+key);document.documentElement.style.setProperty('--accent',t.accent);document.documentElement.style.setProperty('--ramp-low',t.palette[0][1]);document.documentElement.style.setProperty('--ramp-mid',t.palette[Math.floor(t.palette.length/2)][1]);document.documentElement.style.setProperty('--ramp-high',t.palette[t.palette.length-1][1]);syncThemeInput();setupYearBar();drawMap();fld_setLegend();fld_renderPanel();renderRanking();updateUrl();return fld_load(token)}
 function fld_retry(){if(!fld_active())return;_fldTileFailures.clear();state.fieldAbortCtrl=new AbortController();state.fieldLoadToken++;state.fieldFrame=null;state.fieldError=null;state.fieldStatus='loading';state.fieldCacheSeen=false;state.fieldNetworkSeen=false;state.fieldTileErrors=0;fld_load(state.fieldLoadToken)}
 window.fld_retry=fld_retry;
 
@@ -15804,9 +15803,6 @@ function closeCoveragePanel(){
   btn.setAttribute('aria-expanded', 'false');
 }
 
-function toggleCoveragePanel(){
-  if (_cov.panelOpen) closeCoveragePanel(); else openCoveragePanel();
-}
 
 function resetCoverageZoom(){
   if (!_cov.series) return;
@@ -16075,6 +16071,14 @@ function setLatestMode(){
   updateUrl();
   refreshHoverTooltip();
 }
+function stopPlay(){
+  if (state.playTimer){ clearInterval(state.playTimer); state.playTimer = null; }
+  if (state.playing){
+    state.playing = false;
+    const icon = $('playIcon');
+    if (icon) icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+  }
+}
 function togglePlay(){
   state.playing = !state.playing;
   $('playIcon').innerHTML = state.playing
@@ -16255,6 +16259,7 @@ function readUrl(){
    15. CHANGEMENT DE THÈME
    ============================================================ */
 async function switchTheme(key){
+  stopPlay();
   if (state.mode === 'field') fld_exit();
   // Cancel any in-flight
   if (state.abortCtrl) state.abortCtrl.abort();
@@ -16582,45 +16587,6 @@ function drawBigSparkline(svg, themeKey, countryName){
   const lastP = series[series.length-1];
   html += `<circle class="point" cx="${lastX}" cy="${yFor(lastP.value).toFixed(1)}" r="3.2" fill="${col}"/>`;
   svg.innerHTML = html;
-}
-function drawMiniSparkline(svg, themeKey, countryName){
-  if (!svg || !themeKey || !countryName) return;
-  const m = state.previewData.get(themeKey);
-  if (!m) return;
-  const item = m.get(norm(topoToOwid(countryName)));
-  if (!item || !item.series || item.series.length < 2) return;
-  const series = item.series;
-  // SVG viewBox is 140 × 28
-  const W = 140, H = 28, padL = 2, padR = 2, padT = 3, padB = 3;
-  const innerW = W - padL - padR;
-  const innerH = H - padT - padB;
-  let yMin = Infinity, yMax = -Infinity, xMin = Infinity, xMax = -Infinity;
-  for (const p of series){
-    if (p.value < yMin) yMin = p.value;
-    if (p.value > yMax) yMax = p.value;
-    if (p.year < xMin) xMin = p.year;
-    if (p.year > xMax) xMax = p.year;
-  }
-  if (yMax === yMin) yMax = yMin + 1;
-  if (xMax === xMin) xMax = xMin + 1;
-  const xFor = y => padL + ((y - xMin) / (xMax - xMin)) * innerW;
-  const yFor = v => padT + (1 - (v - yMin) / (yMax - yMin)) * innerH;
-  let d = '';
-  series.forEach((p, i) => {
-    d += (i === 0 ? 'M' : 'L') + xFor(p.year).toFixed(1) + ',' + yFor(p.value).toFixed(1) + ' ';
-  });
-  // Area fill below line
-  const lastX = xFor(series[series.length-1].year).toFixed(1);
-  const firstX = xFor(series[0].year).toFixed(1);
-  const areaD = d + `L ${lastX},${(H-padB).toFixed(1)} L ${firstX},${(H-padB).toFixed(1)} Z`;
-  // Use theme color if available
-  const t = THEMES[themeKey];
-  const col = t && t.color ? `rgb(${t.color.join(',')})` : 'var(--accent)';
-  svg.innerHTML = `
-    <path d="${areaD}" fill="${col}" opacity="0.18"/>
-    <path d="${d}" fill="none" stroke="${col}" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${lastX}" cy="${yFor(series[series.length-1].value).toFixed(1)}" r="1.8" fill="${col}"/>
-  `;
 }
 
 
@@ -20861,8 +20827,8 @@ init().catch(e => {
     rows.push(['1ᵉʳ quartile (Q1)', fmt(s.q1)]);
     rows.push(['Pays médian', fmt(s.median)]);
     rows.push(['3ᵉ quartile (Q3)', fmt(s.q3)]);
-    rows.push(['Minimum', fmt(s.min.v)+' — '+frName(s.min.n)]);
-    rows.push(['Maximum', fmt(s.max.v)+' — '+frName(s.max.n)]);
+    rows.push(['Minimum', fmt(s.min.v)+' — '+escapeHtml(frName(s.min.n))]);
+    rows.push(['Maximum', fmt(s.max.v)+' — '+escapeHtml(frName(s.max.n))]);
     if(typeof modal!=='function') return;
     const ch=seriesForChart();
     modal('<button class="modal-close" onclick="closeModal()" aria-label="Fermer">×</button>'
@@ -21008,8 +20974,8 @@ init().catch(e => {
         +'Z" fill="'+color+'" stroke="rgba(9,11,22,.85)" stroke-width="1"><title>'+label+'</title></path>';
       a0=a1; };
     top.forEach((p,i)=>{ const pc=p.v/s.total*100;
-      seg(p.v, PAL[i], frName(p.n)+' — '+pc.toFixed(1)+' %');
-      leg+='<div class="sd-leg"><i style="background:'+PAL[i]+'"></i><span>'+frName(p.n)+'</span><b>'+pc.toFixed(1)+' %</b></div>'; });
+      seg(p.v, PAL[i], escapeHtml(frName(p.n))+' — '+pc.toFixed(1)+' %');
+      leg+='<div class="sd-leg"><i style="background:'+PAL[i]+'"></i><span>'+escapeHtml(frName(p.n))+'</span><b>'+pc.toFixed(1)+' %</b></div>'; });
     if(rest>0){ seg(rest,'rgba(140,146,168,.35)','Reste du monde — '+(rest/s.total*100).toFixed(1)+' %');
       leg+='<div class="sd-leg"><i style="background:rgba(140,146,168,.35)"></i><span>Reste du monde</span><b>'+(rest/s.total*100).toFixed(1)+' %</b></div>'; }
     return '<div class="sd-wrap"><svg id="synthDonut" width="196" height="196" viewBox="0 0 196 196">'+paths
@@ -21581,7 +21547,7 @@ init().catch(e => {
     lbxEl.setAttribute('aria-label','Aperçu agrandi : '+meta.t);
     const img=document.createElement('img'); img.alt=meta.t; img.src=meta.art;
     Object.assign(img.style,{top:r.top+'px',left:r.left+'px',width:r.width+'px',height:r.height+'px'});
-    const esc=s=>String(s).replace(/</g,'&lt;');
+    const esc=s=>escapeHtml(String(s));
     const cap=document.createElement('div'); cap.className='cap';
     cap.innerHTML='<b>'+esc(meta.t)+'</b> — '+esc(meta.artist)
       +'<span class="att">'+(meta.att?esc(meta.att)+' · ':'')+'clic ou Échap pour fermer</span>';
@@ -21793,7 +21759,7 @@ init().catch(e => {
       if(!resolved.art){setZoomable(false);mediaEl.querySelector('.ld').textContent='visuel indisponible · fiche accessible';return}
       const im=new Image();
       im.onload=()=>{ if(cardGen!==g) return;
-        mediaEl.style.backgroundImage='url("'+resolved.art+'")';
+        mediaEl.style.backgroundImage='url("'+String(resolved.art).replace(/[\\"]/g,'\\$&')+'")';
         mediaEl.querySelector('.ld').style.display='none';setZoomable(true); };
       im.onerror=()=>{ if(cardGen===g){setZoomable(false);mediaEl.querySelector('.ld').textContent='visuel réseau indisponible'} };
       im.src=resolved.art;
@@ -39201,51 +39167,8 @@ body.mob.mob-layer-open .atlas-v44-mode-hud,body.mob.mob-layer-open .atlas-v44-r
     return [...new Set(hits)];
   }
   function boot(){
-    const lang=language(),metaByLanguage={
-      fr:{
-        title:'Atlas — Les chiffres du monde',
-        description:'Atlas est une carte interactive des grandes statistiques mondiales : voyage à travers les années, compare les pays et explore des données sourcées.',
-        ogTitle:'Atlas — la carte interactive des chiffres du monde',
-        ogDescription:'Une carte mondiale qui voyage dans le temps. Plus de 100 explorations reliées, sources explicites et comparaison de pays.',
-        locale:'fr_FR',
-        twitterDescription:'Voyage dans les chiffres du monde avec des courbes historiques, des lieux, des cultures et plus de 100 thèmes reliés.'
-      },
-      en:{
-        title:'Atlas — World in Numbers',
-        description:'Atlas is an interactive map of major world statistics: travel through time, compare countries and explore sourced data.',
-        ogTitle:'Atlas — the interactive map of world data',
-        ogDescription:'A world map that travels through time, with more than 100 connected explorations, explicit sources and country comparisons.',
-        locale:'en_US',
-        twitterDescription:'Explore world data through historical charts, places, cultures and more than 100 connected topics.'
-      },
-      es:{
-        title:'Atlas — El mundo en cifras',
-        description:'Atlas es un mapa interactivo de las grandes estadísticas mundiales: viaja en el tiempo, compara países y explora datos con sus fuentes.',
-        ogTitle:'Atlas — el mapa interactivo de los datos del mundo',
-        ogDescription:'Un mapa mundial que viaja en el tiempo, con más de 100 exploraciones conectadas, fuentes explícitas y comparaciones entre países.',
-        locale:'es_ES',
-        twitterDescription:'Explora los datos del mundo con gráficos históricos, lugares, culturas y más de 100 temas conectados.'
-      },
-      de:{
-        title:'Atlas — Die Welt in Zahlen',
-        description:'Atlas ist eine interaktive Karte wichtiger weltweiter Statistiken: Reise durch die Zeit, vergleiche Länder und erkunde Daten mit nachvollziehbaren Quellen.',
-        ogTitle:'Atlas — die interaktive Karte der Welt in Zahlen',
-        ogDescription:'Eine Weltkarte, die durch die Zeit reist: mehr als 100 verknüpfte Erkundungen, klare Quellen und Ländervergleiche.',
-        locale:'de_DE',
-        twitterDescription:'Erkunde weltweite Daten mit historischen Diagrammen, Orten, Kulturen und mehr als 100 verknüpften Themen.'
-      }
-    },pageMeta=metaByLanguage[lang];
-    document.documentElement.lang=lang;
-    document.title=pageMeta.title;
-    const metadata={
-      'meta[name="description"]':pageMeta.description,
-      'meta[property="og:title"]':pageMeta.ogTitle,
-      'meta[property="og:description"]':pageMeta.ogDescription,
-      'meta[property="og:locale"]':pageMeta.locale,
-      'meta[name="twitter:title"]':pageMeta.ogTitle,
-      'meta[name="twitter:description"]':pageMeta.twitterDescription
-    };
-    Object.entries(metadata).forEach(([selector,content])=>document.querySelector(selector)?.setAttribute('content',content));
+    const lang=language();
+    applyPageMetadata(lang);
     buildThemeMap();
     if(lang!=='fr'){
       try{
@@ -39693,7 +39616,9 @@ body.iceegg-on .iceegg-navtitle{display:flex}body.iceegg-on.iceegg-nav-on .iceeg
     later(()=>{try{window.dispatchEvent(new Event('resize'));updateIceLayer()}catch(_){}},380);
     document.addEventListener('keydown',onKey,true);document.addEventListener('click',onDocumentClick,true);window.addEventListener('resize',updateIceLayer);
     if(awardSecret()){later(()=>{injectProgress();try{window.AtlasCoreBridge?.toast(c().unlocked)}catch(_){}},3600)}
-    try{historyArmed=!!window.atlasArmBack?.()}catch(_){historyArmed=false}
+    /* Ne consommer la sentinelle Retour que si ce module l'a réellement posée :
+       sinon on volerait celle d'une couche déjà ouverte (sheet, menu…). */
+    try{const wasArmed=!!window.atlasBackIsArmed?.();historyArmed=!!window.atlasArmBack?.()&&!wasArmed}catch(_){historyArmed=false}
     return true;
   }
   function exitCore(){
@@ -40327,7 +40252,9 @@ body.atlas-pb-open>:not(#atlasPetitBacRoot):not(.toast){pointer-events:none}
     if(!root||root.classList.contains('on'))return;
     savedFocus=document.activeElement;setBackgroundInert(true);
     root.classList.add('on');root.setAttribute('aria-hidden','false');root.setAttribute('aria-label',t('game'));document.body.classList.add('atlas-pb-open');renderHome();
-    try{historyArmed=!!window.atlasArmBack?.()}catch(_){historyArmed=false}
+    /* Même règle que le visualiseur 3D : on ne possède la sentinelle Retour
+       que si personne ne l'avait déjà posée. */
+    try{const wasArmed=!!window.atlasBackIsArmed?.();historyArmed=!!window.atlasArmBack?.()&&!wasArmed}catch(_){historyArmed=false}
     setTimeout(()=>{try{(root.querySelector('[data-pb-start]')||root.querySelector('[data-pb-close]'))?.focus({preventScroll:true})}catch(_){}},40);
   }
   function closeCore(){
@@ -40352,10 +40279,12 @@ body.atlas-pb-open>:not(#atlasPetitBacRoot):not(.toast){pointer-events:none}
     if(nav&&!document.getElementById('atlasGamesBtn')){
       const b=document.createElement('button');b.id='atlasGamesBtn';b.type='button';b.className='btn ghost atlas-games-btn';b.textContent=t('desktop');b.setAttribute('aria-label',t('menu'));
       const settings=document.getElementById('settingsBtn');nav.insertBefore(b,settings||nav.firstChild);b.addEventListener('click',open);
-    }else{
-      const b=document.getElementById('atlasGamesBtn'),label=t('desktop'),aria=t('menu');
-      if(b.textContent!==label)b.textContent=label;
-      if(b.getAttribute('aria-label')!==aria)b.setAttribute('aria-label',aria);
+    }
+    const gamesBtn=document.getElementById('atlasGamesBtn');
+    if(gamesBtn){
+      const label=t('desktop'),aria=t('menu');
+      if(gamesBtn.textContent!==label)gamesBtn.textContent=label;
+      if(gamesBtn.getAttribute('aria-label')!==aria)gamesBtn.setAttribute('aria-label',aria);
     }
     document.querySelectorAll('.mm-panel').forEach(panel=>{
       if(panel.querySelector('[data-atlas-pb-menu]'))return;
@@ -40595,7 +40524,9 @@ body.atlas-release-open{overflow:hidden!important}
       document.body.classList.contains('atlas-spatial-open')||
       document.body.classList.contains('emb5-model-open')||
       document.body.classList.contains('iceegg-on')||
-      document.body.classList.contains('eegg-on')
+      document.body.classList.contains('eegg-on')||
+      !!window.AtlasCartogram?.isOpen?.()||
+      !!window.AtlasExplorer?.isActive?.()
     );
   }
   function groupHtml(group,w,l){
@@ -40637,7 +40568,7 @@ body.atlas-release-open{overflow:hidden!important}
     if(!root||root.classList.contains('on'))return false;
     clearTimeout(autoTimer);render();restoreFocus=document.activeElement;setBackgroundInert(true);
     root.classList.add('on');root.setAttribute('aria-hidden','false');document.body.classList.add('atlas-release-open');
-    historyArmed=false;try{historyArmed=!!window.atlasArmBack?.()}catch(_){}
+    historyArmed=false;try{const wasArmed=!!window.atlasBackIsArmed?.();historyArmed=!!window.atlasArmBack?.()&&!wasArmed}catch(_){}
     document.addEventListener('keydown',onKey,true);
     requestAnimationFrame(()=>root.querySelector('.arn-close')?.focus({preventScroll:true}));
     if(options.markImmediately)markSeen();
@@ -40688,8 +40619,8 @@ body.atlas-release-open{overflow:hidden!important}
     clearTimeout(autoTimer);if(seen())return;
     autoTimer=setTimeout(()=>{
       if(seen())return;
-      if(blockers()&&attempt<18){scheduleAuto(attempt+1);return}
-      if(!blockers())open();
+      if(blockers()){if(attempt<40)scheduleAuto(attempt+1);return}
+      open();
     },attempt?650:1050);
   }
   function build(){
