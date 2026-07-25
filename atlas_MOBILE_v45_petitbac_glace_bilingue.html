@@ -122,7 +122,6 @@ body{
   font-weight:500;
 }
 .brand:hover .brand-mark{color:var(--accent)}
-.nav-spacer{flex:1}
 
 .nav-center{
   flex:1;
@@ -671,16 +670,6 @@ body.fx-on .sphere-ring{filter:drop-shadow(0 0 10px rgba(120,160,220,.25)) drop-
   transition:border-color .15s, transform .15s;
 }
 .legend:hover{border-color:var(--accent);transform:translateY(-2px)}
-.legend:hover .legend-cta{color:var(--accent)}
-.legend-cta{
-  margin-top:10px;
-  font-size:11px;
-  color:var(--muted);
-  font-weight:500;
-  letter-spacing:.04em;
-  text-transform:uppercase;
-  transition:color .15s;
-}
 .legend.exploding{
   position:fixed;
   z-index:5500;
@@ -1166,7 +1155,6 @@ body.intro-hide-map #map{ opacity:0; }
 .panel::-webkit-scrollbar{width:8px}
 .panel::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
 
-.panel-pad{padding:22px 22px 28px}
 .panel-section{
   padding:18px 22px;
   border-bottom:1px solid var(--line-soft);
@@ -1454,9 +1442,7 @@ body.intro-hide-map #map{ opacity:0; }
 .grid line{stroke:var(--line-soft);stroke-dasharray:2 3}
 .grid path{display:none}
 .line-primary{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round}
-.line-compare{fill:none;stroke:#7fb6e3;stroke-width:2.2;stroke-linejoin:round;stroke-dasharray:0}
 .dot-primary{fill:var(--accent)}
-.dot-compare{fill:#7fb6e3}
 .year-cursor{stroke:var(--ink-soft);stroke-width:1;stroke-dasharray:2 3;opacity:.5}
 .year-cursor-label{fill:var(--muted);font-family:var(--mono);font-size:10px}
 
@@ -20764,9 +20750,13 @@ init().catch(e => {
   }
   function refresh(force){
     ensureUI();
-    if(!active()){ el.classList.remove('show'); return; }
+    if(!active()){ el.classList.remove('show'); refresh._sig=null; return; }
     if(!popMap && !popLoading) loadPop();
-    const s=compute(); if(!s){ el.classList.remove('show'); return; }
+    const s=compute(); if(!s){ el.classList.remove('show'); refresh._sig=null; return; }
+    // Ne réécrire le HTML (et ne re-mesurer la position) que si le contenu change.
+    const sig=s.key+'|'+s.year+'|'+s.n+'|'+s.total+'|'+s.wmean+'|'+s.median+'|'+s.empty;
+    if(!force && refresh._sig===sig) return;
+    refresh._sig=sig;
     place();
     const yearLbl = s.year==null ? 'dernières données' : s.year;
     if(s.empty){
@@ -20963,7 +20953,7 @@ init().catch(e => {
   window.__synthSeries=()=>seriesForChart();
   function boot(){
     ensureUI();
-    setInterval(()=>{if(!document.body.classList.contains('atlas-realtime-open'))refresh(false)}, 700);
+    setInterval(()=>{if(!document.hidden&&!document.body.classList.contains('atlas-realtime-open'))refresh(false)}, 700);
     addEventListener('resize', place);
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
@@ -21834,7 +21824,7 @@ init().catch(e => {
     pollHover();                                // observe state.hoverName / topCountrySel
     document.addEventListener('pointerover', onRowOver, true);
     document.addEventListener('pointerout',  onRowOut,  true);
-    setInterval(watchdog, 700);
+    setInterval(()=>{if(!document.hidden)watchdog()}, 700);
     window.__embAudio=()=>{ const s=a=>({paused:a.paused,vol:+a.volume.toFixed(2)});
       const sc=AudioBus.curKey()||null;
       return { scope:sc,
@@ -24383,7 +24373,7 @@ function boot(){
     window.visualViewport.addEventListener('scroll', fitOverlays);
   }
   requestAnimationFrame(idleSpin);
-  setInterval(watcher, 350);
+  setInterval(()=>{if(!document.hidden)watcher()}, 350);
   syncBar(); syncLegend(); syncScrub(); syncTitle(); mobTextSweep();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
@@ -32406,7 +32396,6 @@ body.atlas-spatial-open{overflow:hidden!important;touch-action:manipulation!impo
 
 /* v36 — the live Atlas mobile UI is adopted into the WebXR DOM overlay.
    It stays screen-readable while the globe itself remains world-anchored. */
-#atlasSpatialRoot > .nav{position:absolute;z-index:30;top:0;left:0;right:0;width:100%;background:rgba(3,8,14,.78);border-bottom-color:rgba(255,255,255,.1)}
 #atlasSpatialRoot .atlas-spatial-theme-hud{
   position:absolute;z-index:27;top:calc(62px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
   width:min(88vw,430px);min-height:48px;display:grid;grid-template-columns:34px minmax(0,1fr) 28px;align-items:center;gap:8px;
@@ -34784,7 +34773,8 @@ ${s}${o}`+n.repeat(t)+`${s}`,a}function NN(t,e,r,s){return`${e}${s}`+r.repeat(t)
   document.addEventListener('atlas:theme-health',function(){updateTrustStrip();decorateThemeHealth()});
   document.addEventListener('input',function(e){if(e.target&&e.target.id==='mobFontSlider')setTimeout(applyTypeScale,0)},true);
   new MutationObserver(applyTypeScale).observe(document.documentElement,{attributes:true,attributeFilter:['style']});
-  new MutationObserver(function(){decorateSettings();updateTrustStrip();decorateThemeHealth();applyTypeScale()}).observe(document.body,{subtree:true,childList:true});
+  var polishFrame=0;
+  new MutationObserver(function(){if(polishFrame)return;polishFrame=requestAnimationFrame(function(){polishFrame=0;decorateSettings();updateTrustStrip();decorateThemeHealth();applyTypeScale()})}).observe(document.body,{subtree:true,childList:true});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootPolish,{once:true});else bootPolish();
 })();
 </script>
@@ -34808,7 +34798,8 @@ ${s}${o}`+n.repeat(t)+`${s}`,a}function NN(t,e,r,s){return`${e}${s}`+r.repeat(t)
   function refresh(query,focus){var box=document.getElementById('modalBox');if(!box)return;var scroll=box.scrollTop;box.innerHTML=bodyHtml(query);box.scrollTop=scroll;wire(query,focus)}
   function openCompare(){modal(bodyHtml(''));wire('',false)}
   window.AtlasCompareSpace={open:openCompare};
-  new MutationObserver(function(){var panel=document.querySelector('.mm-panel');if(!panel||panel.querySelector('[data-atlas-compare]'))return;var anchor=panel.querySelector('[data-a="progress"]')||panel.querySelector('[data-a="settings"]');if(!anchor)return;var button=document.createElement('button');button.className='mob-item';button.type='button';button.dataset.atlasCompare='1';button.innerHTML='<span class="ii">⇄</span><span class="il">Comparer les pays</span><span class="is">COURBES</span>';button.onclick=function(){var menu=document.querySelector('.mob-menu');if(menu)menu.classList.remove('on');openCompare()};anchor.before(button)}).observe(document.body,{subtree:true,childList:true});
+  var compareMenuFrame=0;
+  new MutationObserver(function(){if(compareMenuFrame)return;compareMenuFrame=requestAnimationFrame(function(){compareMenuFrame=0;var panel=document.querySelector('.mm-panel');if(!panel||panel.querySelector('[data-atlas-compare]'))return;var anchor=panel.querySelector('[data-a="progress"]')||panel.querySelector('[data-a="settings"]');if(!anchor)return;var button=document.createElement('button');button.className='mob-item';button.type='button';button.dataset.atlasCompare='1';button.innerHTML='<span class="ii">⇄</span><span class="il">Comparer les pays</span><span class="is">COURBES</span>';button.onclick=function(){var menu=document.querySelector('.mob-menu');if(menu)menu.classList.remove('on');openCompare()};anchor.before(button)})}).observe(document.body,{subtree:true,childList:true});
 })();
 </script>
 
@@ -35694,7 +35685,7 @@ function boot(){
     if(relevant)queueChrome()
   }).observe(document.body,{childList:true,subtree:true});
   addEventListener('resize',function(){if(cart.active){cart.signature='';cart.positions.clear();scheduleCartRender(310)}});
-  setInterval(watchdog,400)
+  setInterval(function(){if(!document.hidden)watchdog()},400)
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
@@ -35716,11 +35707,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .atlas-v44-mode-hud .v44-hud-kicker{font:700 11px/1 var(--mono);letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
 .atlas-v44-mode-hud .v44-hud-title{font:650 14px/1.2 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .atlas-v44-mode-hud .v44-hud-note{font:550 11px/1.25 var(--sans);color:var(--muted)}
-.atlas-v44-mode-hud button,.atlas-v44-hud-action{
+.atlas-v44-mode-hud button{
   width:42px;height:42px;flex:0 0 42px;border:1px solid var(--line);border-radius:13px;
   background:var(--bg-soft);color:var(--ink);font:700 17px/1 var(--sans);cursor:pointer
 }
-.atlas-v44-mode-hud button:active,.atlas-v44-hud-action:active{transform:scale(.95)}
+.atlas-v44-mode-hud button:active{transform:scale(.95)}
 .atlas-cart-label{font:700 10.5px/1 var(--sans);fill:var(--ink);paint-order:stroke;stroke:var(--panel);stroke-width:3.2px;stroke-linejoin:round;pointer-events:none}
 .atlas-cart-hit{fill:transparent;stroke:transparent;cursor:pointer}
 .atlas-cart-overlay{isolation:isolate}
@@ -40212,7 +40203,8 @@ body.atlas-pb-open>:not(#atlasPetitBacRoot):not(.toast){pointer-events:none}
   function build(){
     root=document.createElement('section');root.id='atlasPetitBacRoot';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');root.setAttribute('aria-hidden','true');document.body.appendChild(root);
     root.addEventListener('keydown',e=>{trapFocus(e);if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close(false)}});
-    const observer=new MutationObserver(()=>injectMenus());observer.observe(document.body,{childList:true,subtree:true});
+    let menuFrame=0;
+    const observer=new MutationObserver(()=>{if(menuFrame)return;menuFrame=requestAnimationFrame(()=>{menuFrame=0;injectMenus()})});observer.observe(document.body,{childList:true,subtree:true});
     injectMenus();
     const oldProgress=window.atlasOpenProgress;if(typeof oldProgress==='function')window.atlasOpenProgress=function(){oldProgress.apply(this,arguments);setTimeout(injectProgress,0)};
     document.addEventListener('atlas:languagechange',()=>{
