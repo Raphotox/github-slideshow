@@ -3827,13 +3827,38 @@ function buildDiscoveryPalette(features, worldGeo){
   return out;
 }
 
+let _discoveryPaletteLoading = false;
+function _provisionalDiscoveryColor(name){
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360}, 38%, 38%)`;
+}
 function discoveryColor(name){
   if (!_discoveryPalette){
     if (state.countries && state.countries.length && state.worldGeo){
-      _discoveryPalette = buildDiscoveryPalette(state.countries, state.worldGeo);
-    } else {
-      return 'hsl(210,15%,40%)';
+      /* Le graphe des détroits (O(n²) de geoDistance) coûtait ~10 s de démarrage
+         sur mobile. Il est mis en cache localStorage et, à froid, calculé après
+         le premier rendu — des teintes provisoires par hachage tiennent l'écran. */
+      if (!_discoveryPaletteLoading){
+        let cached = null;
+        try { cached = JSON.parse(localStorage.getItem('atlas_discovery_palette_v1') || 'null'); } catch(_){}
+        if (cached && cached.n === state.countries.length && cached.map){
+          _discoveryPalette = cached.map;
+        } else {
+          _discoveryPaletteLoading = true;
+          const buildIt = () => {
+            _discoveryPalette = buildDiscoveryPalette(state.countries, state.worldGeo);
+            try { localStorage.setItem('atlas_discovery_palette_v1', JSON.stringify({ n: state.countries.length, map: _discoveryPalette })); } catch(_){}
+            _discoveryPaletteLoading = false;
+            try { repaintCountries(); } catch(_){}
+          };
+          (window.requestIdleCallback || function(f){ setTimeout(f, 600); })(buildIt, { timeout: 4000 });
+        }
+      }
+      if (_discoveryPalette) return _discoveryPalette[name] || 'hsl(210,15%,40%)';
+      return _provisionalDiscoveryColor(name);
     }
+    return 'hsl(210,15%,40%)';
   }
   return _discoveryPalette[name] || 'hsl(210,15%,40%)';
 }
@@ -14086,11 +14111,32 @@ function setupMapInteractions(svg, w, h){
   }
 }
 
+let _noDataCol = null, _noDataAt = 0;
+function noDataColor(){
+  const t = performance.now();
+  if (!_noDataCol || t - _noDataAt > 1000){
+    _noDataCol = getComputedStyle(document.documentElement).getPropertyValue('--no-data').trim() || '#1a212c';
+    _noDataAt = t;
+  }
+  return _noDataCol;
+}
+let _mapBoxCache = null;
+function _mapBox(){
+  if (!_mapBoxCache){
+    const b = $('map').getBoundingClientRect();
+    _mapBoxCache = { width: b.width, height: b.height };
+    if (!_mapBox._wired){
+      _mapBox._wired = true;
+      try { new ResizeObserver(() => { _mapBoxCache = null; }).observe($('map')); }
+      catch(_) { addEventListener('resize', () => { _mapBoxCache = null; }); }
+    }
+  }
+  return _mapBoxCache;
+}
 function repaintProjection(){
   if (state.viewMode === 'globe'){
     state.projection.rotate(state.globeRotation);
-    // Recompute translate to reflect current pan offset
-    const box = $('map').getBoundingClientRect();
+    const box = _mapBox();   // bbox mise en cache : plus de lecture layout par frame
     state.projection.translate([box.width/2 + state.globePanX, box.height/2 + state.globePanY]);
   }
   if (!state.mapGroup) return;
@@ -14125,16 +14171,16 @@ function paintCountry(d){
   // RÉPARTITION: categorical leader map, or a measured gradient for concentration/item.
   if (brk_active()){
     const snap = brk_snapshotFor(name, state.selectedYear);
-    if (!snap || !snap.items.length) return getComputedStyle(document.documentElement).getPropertyValue('--no-data').trim() || '#1a212c';
+    if (!snap || !snap.items.length) return noDataColor();
     if (state.breakdownMapView === 'leader') return snap.items[0].color;
     const v = brk_valueFromSnapshot(snap);
-    return v == null ? (getComputedStyle(document.documentElement).getPropertyValue('--no-data').trim() || '#1a212c') : colorForValue(v);
+    return v == null ? (noDataColor()) : colorForValue(v);
   }
   if (state.currentKey === DISCOVERY){
     return discoveryColor(name);
   }
   const v = valueAt(name, state.showLatest ? null : state.selectedYear);
-  if (v == null) return getComputedStyle(document.documentElement).getPropertyValue('--no-data').trim() || '#1a212c';
+  if (v == null) return noDataColor();
   return colorForValue(v);
 }
 
@@ -23455,6 +23501,9 @@ let _spinPrev = 0;
 function idleSpin(now){
   /* Pas de reprojection ni de boucle à 60 Hz derrière le mode REAL-TIME. */
   if (document.body.classList.contains('atlas-realtime-open')){ setTimeout(() => requestAnimationFrame(idleSpin), 500); return; }
+  /* Veille profonde : après 3 min sans interaction, plus aucune reprojection —
+     la boucle ne fait plus que se re-planifier mollement (batterie). */
+  if (performance.now() - lastAct > 180000){ setTimeout(() => requestAnimationFrame(idleSpin), 1500); return; }
   requestAnimationFrame(idleSpin);
   if (REDUCED || document.hidden) return;
   if (!ST.projection || !ST.mapGroup || ST.viewMode !== 'globe') return;
@@ -23468,9 +23517,9 @@ function idleSpin(now){
    || (menuEl && menuEl.classList.contains('on'))
    || (window.AtlasCopilot && window.AtlasCopilot.isOpen())) return;
   if (performance.now() - lastAct < 7000) return;
-  if (now - _spinPrev < 33) return;                 // ~30 fps suffisent
+  if (now - _spinPrev < 80) return;                 // ~12 fps : la dérive reste fluide, le CPU respire
   _spinPrev = now;
-  ST.globeRotation[0] += 0.05;
+  ST.globeRotation[0] += 0.12;
   repaintProjection();
 }
 
@@ -25120,8 +25169,11 @@ function layerButtonsHTML(){
     '<div class="rt-layer-group-label">AUTRES PHÉNOMÈNES · À ACTIVER</div>'+OPTIONAL_LAYER_ORDER.map(button).join('')+
     '<div class="rt-layer-group-label demo">EXPLORATIONS · DÉMO</div>'+DEMO_LAYER_ORDER.map(button).join('');
 }
+let _rtMobVal=null,_rtMobAt=0;
 function isRealtimeMobile(){
-  return innerWidth<=700||(innerWidth<=920&&coarsePointer.matches);
+  const t=performance.now();
+  if(_rtMobVal===null||t-_rtMobAt>250){_rtMobVal=innerWidth<=700||(innerWidth<=920&&coarsePointer.matches);_rtMobAt=t;}
+  return _rtMobVal;
 }
 function syncMobileCrispMode(){
   if(!root)return;
@@ -32848,7 +32900,6 @@ body.mob.mob-layer-open .atlas-v44-mode-hud,body.mob.mob-layer-open .atlas-v44-r
     localizeSpecialControls();
     document.dispatchEvent(new CustomEvent('atlas:languagechange',{detail:{language:next}}));
     const finish=()=>{
-      translateTree(document.body);
       injectSetting();
       localizeSpecialControls();
       veil.classList.add('done');
