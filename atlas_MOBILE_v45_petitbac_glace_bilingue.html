@@ -23151,7 +23151,7 @@ function syncScrub(){
   const yearBtn = barEl.querySelector('[data-b="year"]');
   const noTime = !yb || yb.classList.contains('hidden');
   const labelNode=[...yearBtn.childNodes].find(n=>n.nodeType===3);
-  if(labelNode)labelNode.nodeValue=ST.mode==='field'?'Période':'Année';
+  if(labelNode){const rawLabel=ST.mode==='field'?'Période':'Année';labelNode.nodeValue=window.AtlasI18n&&AtlasI18n.t?AtlasI18n.t(rawLabel):rawLabel;}
   yearBtn.disabled=noTime;yearBtn.setAttribute('aria-disabled',noTime?'true':'false');
   yearBtn.classList.toggle('dim', noTime);
   if (noTime){
@@ -31871,6 +31871,7 @@ body.mob.mob-layer-open .atlas-v44-mode-hud,body.mob.mob-layer-open .atlas-v44-r
     "top:highest_peaks":["Höchste Gipfel nach Land","Höchste Gipfel","Höchste Gipfel nach Land"],
     "top:largest_stadiums":["Größte Stadien nach Land","Größte Stadien","Größte Stadien nach Land"],
     "top:oldest_universities":["Älteste Universitäten nach Land","Älteste Universitäten","Älteste Universitäten nach Land"],
+    "top:country_landmarks":["Wahrzeichen des Landes","Wahrzeichen","Wahrzeichen des Landes"],
     "evt:nuclear_commissioning":["Inbetriebnahme von Kernkraftwerken – Auswahl","Kernkraftwerke","Inbetriebnahme von Kernkraftwerken – Auswahl"],
     "evt:major_dams_commissioning":["Inbetriebnahme großer Staudämme – Auswahl","Große Staudämme","Inbetriebnahme großer Staudämme – Auswahl"],
     "evt:national_parks_creation":["Gründung von Nationalparks – Auswahl","Nationalparks","Gründung von Nationalparks – Auswahl"],
@@ -32289,10 +32290,18 @@ body.mob.mob-layer-open .atlas-v44-mode-hud,body.mob.mob-layer-open .atlas-v44-r
   });
 
   const THEME_EN_EXTRA=Object.freeze({
-    "evt:great_battles":["Great battles — documented selection","Great battles","Great battles — documented selection"]
+    "evt:great_battles":["Great battles — documented selection","Great battles","Great battles — documented selection"],
+    "top:highest_peaks":["Highest peaks by country","Highest peaks","Highest peaks by country"],
+    "top:largest_stadiums":["Largest stadiums by country","Largest stadiums","Largest stadiums by country"],
+    "top:oldest_universities":["Oldest universities by country","Oldest universities","Oldest universities by country"],
+    "top:country_landmarks":["Country landmarks","Landmarks","Country landmarks"]
   });
   const THEME_ES_EXTRA=Object.freeze({
-    "evt:great_battles":["Grandes batallas — selección documentada","Grandes batallas","Grandes batallas — selección documentada"]
+    "evt:great_battles":["Grandes batallas — selección documentada","Grandes batallas","Grandes batallas — selección documentada"],
+    "top:highest_peaks":["Picos más altos por país","Picos más altos","Picos más altos por país"],
+    "top:largest_stadiums":["Estadios más grandes por país","Estadios más grandes","Estadios más grandes por país"],
+    "top:oldest_universities":["Universidades más antiguas por país","Universidades más antiguas","Universidades más antiguas por país"],
+    "top:country_landmarks":["Hitos del país","Hitos","Hitos del país"]
   });
   const BATTLE_RICH_EN=Object.freeze({
     eventUnit:'mapped battle',eventUnitPlural:'mapped battles',
@@ -32921,7 +32930,7 @@ body.iceegg-on #map .iceegg-ice-layer{filter:none}
 #map .iceegg-ice-layer{pointer-events:none}
 #map .iceegg-ice-layer path{fill:url(#iceeggCapGradient);stroke:#f0fcff;stroke-width:.7;vector-effect:non-scaling-stroke;opacity:0;filter:drop-shadow(0 0 5px rgba(183,236,255,.55));transition:opacity .9s ease}
 body.iceegg-on.iceegg-reveal-on #map .iceegg-ice-layer path{opacity:.94}
-body.iceegg-on .mob-bar,body.iceegg-on .mob-legend,body.iceegg-on .mob-sheet,body.iceegg-on .mob-scrub,body.iceegg-on .mob-center-fab,body.iceegg-on .field-mobile-legend,body.iceegg-on .mob-search,body.iceegg-on #atlasQuizBadge,body.iceegg-on #atlasLiveDiscovery{display:none!important}
+body.iceegg-on .mob-bar,body.iceegg-on .mob-legend,body.iceegg-on .mob-sheet,body.iceegg-on .mob-scrub,body.iceegg-on .mob-center-fab,body.iceegg-on .field-mobile-legend,body.iceegg-on .mob-search,body.iceegg-on #atlasQuizBadge,body.iceegg-on #atlasLiveDiscovery,body.iceegg-on .atlas-ai-trigger{display:none!important}
 body.iceegg-on .atlas-v44-mode-hud,body.iceegg-on .atlas-v44-resume{display:none!important}
 @keyframes iceFlow{to{background-position:220% 50%}}
 
