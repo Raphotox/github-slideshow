@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas — Politique de confidentialité</title>
+<meta name="description" content="Politique de confidentialité et licences open source de l'application Atlas.">
+<style>
+:root{--bg:#0a0e14;--panel:#11161f;--line:#26303f;--ink:#f4f1ea;--soft:#c8c5be;--muted:#8a94a3;--accent:#e8b059}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.65 Georgia,'Times New Roman',serif;padding:32px 18px 80px}
+main{max-width:760px;margin:0 auto}
+h1{font-size:clamp(30px,6vw,44px);font-style:italic;letter-spacing:-.02em;margin:8px 0 4px}
+h2{font-size:21px;margin:38px 0 10px;padding-top:22px;border-top:1px solid var(--line)}
+h3{font-size:16px;margin:22px 0 8px;color:var(--accent)}
+p,li{color:var(--soft);margin:0 0 12px}
+ul{padding-left:22px;margin-bottom:14px}
+a{color:var(--accent)}
+.kicker{font:700 11px/1 ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.updated{color:var(--muted);font-size:13px;margin-bottom:26px}
+table{width:100%;border-collapse:collapse;margin:10px 0 18px;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border:1px solid var(--line);vertical-align:top}
+th{background:var(--panel);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+pre{white-space:pre-wrap;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;font:12px/1.5 ui-monospace,monospace;color:var(--soft);margin:8px 0 18px}
+.note{border-left:3px solid var(--accent);background:var(--panel);padding:12px 14px;border-radius:0 10px 10px 0;margin:14px 0}
+</style>
+</head>
+<body>
+<main>
+<span class="kicker">Atlas · Les chiffres du monde</span>
+<h1>Politique de confidentialité</h1>
+<p class="updated">Dernière mise à jour : juillet 2026 · S'applique à l'application et au site Atlas.</p>
+
+<h2>L'essentiel</h2>
+<ul>
+<li><b>Aucun compte, aucune inscription.</b> Atlas fonctionne sans identité.</li>
+<li><b>Aucune collecte de données personnelles par Atlas.</b> Nous n'avons pas de serveur qui enregistre qui vous êtes ou ce que vous consultez.</li>
+<li><b>Aucun traceur publicitaire, aucune analyse d'audience, aucune revente de données.</b></li>
+<li><b>Tout reste sur votre appareil</b> : préférences, favoris, progression, scores de jeu et caches sont stockés localement (localStorage / IndexedDB) et supprimés si vous effacez les données de l'application.</li>
+</ul>
+
+<h2>Données stockées sur votre appareil</h2>
+<p>Atlas enregistre localement, et uniquement localement : la langue choisie, l'apparence, les réglages, les thèmes récents et favoris, la progression d'apprentissage (XP, badges, quiz, Petit Bac), les caches de données consultées et, si vous l'installez explicitement, le modèle d'IA locale (~370 Mo, supprimable à tout moment depuis l'application). Aucune de ces informations ne quitte votre appareil.</p>
+
+<h2>Services tiers contactés</h2>
+<p>Pour afficher ses cartes et ses données, Atlas interroge directement des sources publiques. Comme pour tout site web, ces services voient les requêtes techniques nécessaires (adresse IP, user-agent, ressource demandée). Atlas ne leur transmet aucun identifiant et ne charge les services marqués « à la demande » qu'après une action de votre part.</p>
+<table>
+<tr><th>Service</th><th>Usage</th><th>Moment</th></tr>
+<tr><td>Our World in Data, Banque mondiale, Ember</td><td>Données statistiques par pays</td><td>Au choix d'un thème</td></tr>
+<tr><td>NASA (GIBS, POWER, EONET), USGS, NOAA (SWPC, NHC, NWS, NDBC)</td><td>Champs continus, séismes, phénomènes, météo spatiale</td><td>Au choix d'un thème / du mode temps réel</td></tr>
+<tr><td>AWS Open Data (tuiles de relief Terrarium)</td><td>Relief et profondeur des océans</td><td>Au choix d'un thème relief</td></tr>
+<tr><td>Wikipédia / Wikimedia Commons</td><td>Fiches, actualités, images sous licence vérifiée</td><td>À la demande</td></tr>
+<tr><td>GDELT</td><td>Titres d'actualité géolocalisés</td><td>Mode temps réel</td></tr>
+<tr><td>Where The ISS At, Launch Library 2</td><td>Position ISS, lancements spatiaux</td><td>Mode temps réel</td></tr>
+<tr><td>Apple iTunes / YouTube (nocookie)</td><td>Extraits musicaux et bandes-annonces officielles</td><td>Uniquement après votre appui</td></tr>
+<tr><td>Hugging Face, jsDelivr</td><td>Téléchargement unique du modèle d'IA locale (vérifié par empreinte)</td><td>Uniquement si vous l'installez</td></tr>
+<tr><td>flagcdn.com</td><td>Drapeaux des pays</td><td>À l'affichage des listes de pays</td></tr>
+</table>
+<p class="note">L'IA d'Atlas s'exécute <b>entièrement sur votre appareil</b> : aucune conversation, aucune commande vocale et aucun texte n'est envoyé à un serveur distant. Le réseau du moteur d'IA est verrouillé après l'installation du modèle.</p>
+
+<h2>Permissions</h2>
+<p>Atlas ne demande ni position, ni contacts, ni caméra. Le microphone n'est sollicité que si votre navigateur propose une dictée traitée localement et que vous appuyez sur le bouton micro ; sinon Atlas ouvre simplement votre clavier. Les notifications sont désactivées par construction.</p>
+
+<h2>Enfants</h2>
+<p>Atlas est une application éducative de consultation. Elle ne contient ni publicité ni achat intégré et ne collecte aucune donnée. Certains contenus culturels (palmarès musicaux, actualités en temps réel provenant de sources tierces) peuvent ne pas convenir aux plus jeunes ; la classification de l'application en tient compte.</p>
+
+<h2>Vos droits & contact</h2>
+<p>Atlas ne détenant aucune donnée vous concernant, il n'y a rien à exporter ni à supprimer de notre côté : l'effacement des données de l'application sur votre appareil suffit. Pour toute question : <a href="mailto:contact.atlas.dev@gmail.com">contact.atlas.dev@gmail.com</a>.</p>
+<p>Cette politique peut évoluer avec les fonctionnalités ; la date en tête de page fait foi.</p>
+
+<h2 id="licences">Licences open source</h2>
+<p>Atlas embarque les bibliothèques et polices suivantes. Merci à leurs auteurs.</p>
+<table>
+<tr><th>Composant</th><th>Auteur / copyright</th><th>Licence</th></tr>
+<tr><td>D3.js v7.9.0</td><td>© 2010-2023 Mike Bostock</td><td>ISC</td></tr>
+<tr><td>topojson-client v3.1.0</td><td>© 2019 Mike Bostock</td><td>ISC</td></tr>
+<tr><td>Three.js</td><td>© 2010-2026 Three.js Authors</td><td>MIT</td></tr>
+<tr><td>Transformers.js v4.2.0</td><td>© Hugging Face</td><td>Apache-2.0</td></tr>
+<tr><td>ONNX Runtime Web</td><td>© Microsoft Corporation</td><td>MIT</td></tr>
+<tr><td>Instrument Serif</td><td>© 2022 The Instrument Serif Project Authors</td><td>SIL OFL 1.1</td></tr>
+<tr><td>Geist</td><td>© 2023 Vercel</td><td>SIL OFL 1.1</td></tr>
+<tr><td>JetBrains Mono</td><td>© 2020 JetBrains</td><td>SIL OFL 1.1</td></tr>
+<tr><td>Cartographie</td><td>Natural Earth (domaine public) via world-atlas</td><td>Domaine public</td></tr>
+</table>
+
+<h3>Licence ISC (D3.js, topojson-client)</h3>
+<pre>Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.</pre>
+
+<h3>Licence MIT (Three.js, ONNX Runtime Web)</h3>
+<pre>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.</pre>
+
+<h3>Licence Apache-2.0 (Transformers.js)</h3>
+<p>Texte intégral : <a href="https://www.apache.org/licenses/LICENSE-2.0" rel="noopener" target="_blank">apache.org/licenses/LICENSE-2.0</a>. Une copie complète de la licence est également embarquée dans l'application (bloc <code>atlas-transformers-license</code>).</p>
+
+<h3>SIL Open Font License 1.1 (polices)</h3>
+<p>Les trois familles de polices sont distribuées sous la <a href="https://openfontlicense.org" rel="noopener" target="_blank">SIL Open Font License 1.1</a> : usage, étude, modification et redistribution libres, y compris embarquées dans une application, sous réserve de conserver leurs mentions de copyright.</p>
+</main>
+</body>
+</html>
