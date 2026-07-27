@@ -1,0 +1,443 @@
+<style>
+  :root {
+    --paper: #F2F5F3;
+    --surface: #FBFCFB;
+    --surface-2: #E9EFEC;
+    --ink: #14201C;
+    --ink-soft: #47554F;
+    --line: #D5DED9;
+    --pine: #1B5A4E;
+    --pine-bright: #237A69;
+    --sage: #7FA79A;
+    --apricot: #D9713E;
+    --apricot-soft: #F3E3D8;
+    --good: #2E7D5B;
+    --warn: #B5852A;
+    --bad: #B0503C;
+    --radius: 14px;
+    --maxw: 720px;
+    --font-display: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0F1613;
+      --surface: #16211D;
+      --surface-2: #1D2A25;
+      --ink: #E7EDE9;
+      --ink-soft: #A2B1AB;
+      --line: #2A3833;
+      --pine: #4FB39D;
+      --pine-bright: #64C6B0;
+      --sage: #6E958A;
+      --apricot: #E8946A;
+      --apricot-soft: #33241C;
+      --good: #5CB98C;
+      --warn: #D6AC55;
+      --bad: #E08066;
+    }
+  }
+  :root[data-theme="light"] {
+    --paper: #F2F5F3; --surface: #FBFCFB; --surface-2: #E9EFEC; --ink: #14201C;
+    --ink-soft: #47554F; --line: #D5DED9; --pine: #1B5A4E; --pine-bright: #237A69;
+    --sage: #7FA79A; --apricot: #D9713E; --apricot-soft: #F3E3D8;
+    --good: #2E7D5B; --warn: #B5852A; --bad: #B0503C;
+  }
+  :root[data-theme="dark"] {
+    --paper: #0F1613; --surface: #16211D; --surface-2: #1D2A25; --ink: #E7EDE9;
+    --ink-soft: #A2B1AB; --line: #2A3833; --pine: #4FB39D; --pine-bright: #64C6B0;
+    --sage: #6E958A; --apricot: #E8946A; --apricot-soft: #33241C;
+    --good: #5CB98C; --warn: #D6AC55; --bad: #E08066;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-size: 17px;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+  section { padding: 46px 0; border-top: 1px solid var(--line); }
+  section:first-of-type { border-top: 0; }
+
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.15; text-wrap: balance; letter-spacing: -0.01em; }
+  h2 { font-size: clamp(1.5rem, 5vw, 2rem); margin: 0 0 6px; }
+  h3 { font-size: 1.18rem; margin: 0 0 6px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--pine); }
+  strong { font-weight: 650; color: var(--ink); }
+
+  .eyebrow {
+    font-family: var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--pine);
+    margin: 0 0 14px;
+  }
+  .lede { color: var(--ink-soft); font-size: 1.05rem; }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    position: relative;
+    padding: 68px 0 54px;
+    overflow: hidden;
+    border-top: 0;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: -140px; left: 50%;
+    width: 620px; height: 620px;
+    transform: translateX(-50%);
+    background:
+      radial-gradient(circle, color-mix(in srgb, var(--pine) 22%, transparent) 0%, transparent 62%);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .hero .rings { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); z-index: 0; opacity: 0.5; pointer-events: none; }
+  .hero .rings circle { fill: none; stroke: var(--sage); stroke-width: 1; opacity: 0.4; }
+  .hero .wrap { position: relative; z-index: 1; }
+  .hero h1 { font-size: clamp(2.1rem, 8.5vw, 3.3rem); margin: 0 0 18px; }
+  .hero h1 .accent { color: var(--pine); font-style: italic; }
+  .hero .sub { font-size: 1.12rem; color: var(--ink-soft); max-width: 34ch; }
+  .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+  .badge {
+    font-size: 0.74rem; font-weight: 600; letter-spacing: 0.02em;
+    padding: 6px 12px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink-soft);
+  }
+  .badge.hot { background: var(--apricot-soft); border-color: transparent; color: var(--apricot); }
+
+  /* ---------- CALLOUT ---------- */
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--apricot);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin: 8px 0 0;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .tag { font-weight: 700; color: var(--apricot); }
+
+  /* ---------- METRICS ---------- */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 8px; }
+  .metric {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px;
+  }
+  .metric .num { font-family: var(--font-display); font-size: 1.9rem; color: var(--pine); font-variant-numeric: tabular-nums; line-height: 1; }
+  .metric .lbl { font-size: 0.82rem; color: var(--ink-soft); margin-top: 8px; }
+
+  /* ---------- PILLARS ---------- */
+  .pillars { display: grid; gap: 14px; margin-top: 8px; }
+  .pillar {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 20px 22px; position: relative;
+  }
+  .pillar .n {
+    font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700;
+    color: var(--pine); letter-spacing: 0.05em;
+  }
+  .pillar h3 { margin-top: 4px; }
+  .pillar p { margin-bottom: 0; color: var(--ink-soft); font-size: 0.98rem; }
+
+  /* ---------- TABLE ---------- */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); margin-top: 8px; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); }
+  tr:last-child td { border-bottom: 0; }
+  td strong { color: var(--pine); }
+
+  /* ---------- FLOW ---------- */
+  .flow { display: grid; gap: 12px; margin-top: 8px; }
+  .flow-item {
+    display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px;
+  }
+  .flow-item .ic {
+    width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--surface-2); color: var(--pine); font-family: var(--font-display); font-size: 1.1rem; font-weight: 700;
+  }
+  .flow-item h3 { font-size: 1.02rem; margin-bottom: 3px; }
+  .flow-item p { margin: 0; color: var(--ink-soft); font-size: 0.92rem; }
+
+  /* ---------- TRUTH (two cols) ---------- */
+  .truth { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
+  .truth .cell { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .truth .no { border-top: 3px solid var(--bad); }
+  .truth .yes { border-top: 3px solid var(--good); }
+  .truth .k { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .truth .no .k { color: var(--bad); }
+  .truth .yes .k { color: var(--good); }
+  .truth p { margin: 8px 0 0; font-size: 0.92rem; color: var(--ink-soft); }
+
+  /* ---------- PRICING ---------- */
+  .price-wrap { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
+  .plan { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+  .plan.paid { border: 1.5px solid var(--pine); background: color-mix(in srgb, var(--pine) 6%, var(--surface)); }
+  .plan .name { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--ink-soft); }
+  .plan .amt { font-family: var(--font-display); font-size: 2rem; margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
+  .plan .amt small { font-size: 0.9rem; color: var(--ink-soft); font-family: var(--font-body); }
+  .plan ul { margin: 12px 0 0; padding-left: 18px; font-size: 0.9rem; color: var(--ink-soft); }
+  .plan li { margin-bottom: 5px; }
+
+  /* ---------- ROADMAP ---------- */
+  .road { margin-top: 12px; border-left: 2px solid var(--line); padding-left: 22px; display: grid; gap: 22px; }
+  .road-step { position: relative; }
+  .road-step::before {
+    content: ""; position: absolute; left: -29px; top: 4px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--paper); border: 2px solid var(--pine);
+  }
+  .road-step.now::before { background: var(--pine); }
+  .road-step .ph { font-family: var(--font-mono); font-size: 0.74rem; font-weight: 700; letter-spacing: 0.05em; color: var(--pine); text-transform: uppercase; }
+  .road-step h3 { font-size: 1.05rem; margin: 3px 0 4px; }
+  .road-step p { margin: 0; font-size: 0.92rem; color: var(--ink-soft); }
+
+  /* ---------- DECISIONS ---------- */
+  .decisions { display: grid; gap: 10px; margin-top: 8px; counter-reset: dec; }
+  .decision {
+    display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: baseline;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px;
+  }
+  .decision::before {
+    counter-increment: dec; content: counter(dec);
+    font-family: var(--font-display); font-size: 1.1rem; color: var(--pine); font-weight: 700; min-width: 18px;
+  }
+  .decision p { margin: 0; font-size: 0.94rem; }
+  .decision .q { color: var(--ink-soft); }
+
+  footer { padding: 40px 0 60px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 0.82rem; }
+  footer .repo { font-family: var(--font-mono); font-size: 0.8rem; color: var(--pine); word-break: break-all; }
+
+  @media (max-width: 560px) {
+    .truth, .price-wrap { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal { animation: up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+    @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+
+<header class="hero">
+  <svg class="rings" width="440" height="440" viewBox="0 0 440 440" aria-hidden="true">
+    <circle cx="220" cy="220" r="70"></circle>
+    <circle cx="220" cy="220" r="130"></circle>
+    <circle cx="220" cy="220" r="195"></circle>
+  </svg>
+  <div class="wrap reveal">
+    <p class="eyebrow">Contrôle parental &middot; IA &middot; France &middot; Android</p>
+    <h1>Reprendre le contrôle en&nbsp;famille, <span class="accent">sans ficher son enfant.</span></h1>
+    <p class="sub">Un agent qui applique <em>vos</em> règles — défini en parlant à une IA, testé avant d'être activé, transparent pour l'enfant. Pas de mouchard. Pas d'historique. Pas d'État.</p>
+    <div class="badge-row">
+      <span class="badge hot">Créneau IA non saturé</span>
+      <span class="badge">Fenêtre 12–24 mois</span>
+      <span class="badge">Conforme Play Store</span>
+      <span class="badge">Privacy-first / RGPD</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section>
+    <p class="eyebrow">Le verdict</p>
+    <h2>Oui, l'idée tient. Mais pas la version « invisible ».</h2>
+    <p class="lede">Le concept est bon et le marché est réel. Un point de ta description a fait bloquer la demande de départ — et c'est le même point qui ferait rejeter l'appli du Play&nbsp;Store.</p>
+    <div class="callout">
+      <p><span class="tag">Le point clé.</span> Un agent <strong>invisible + indétectable + impossible à supprimer</strong> qui surveille quelqu'un, c'est la définition exacte d'un <em>stalkerware</em> — interdit sur le Play Store. On garde toute ta vision, mais en version <strong>« visible mais inviolable »</strong> : l'enfant sait qu'un contrôle existe, sans pouvoir le contourner.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Le marché</p>
+    <h2>Un socle saturé, une couche IA vide</h2>
+    <div class="metrics">
+      <div class="metric"><div class="num">1,7&nbsp;Md$</div><div class="lbl">Marché mondial 2025</div></div>
+      <div class="metric"><div class="num">~11&nbsp;%</div><div class="lbl">Croissance annuelle</div></div>
+      <div class="metric"><div class="num">4&nbsp;Md$</div><div class="lbl">Projection 2034</div></div>
+    </div>
+    <p style="margin-top:20px">Le temps d'écran, le blocage d'apps et le filtrage web sont <strong>banalisés et gratuits</strong> (Google Family Link, Apple Screen&nbsp;Time). Impossible de gagner là-dessus. Mais <strong>personne</strong> ne propose config-en-langage-naturel + simulation + boucle d'apprentissage. C'est l'espace blanc.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Acteur</th><th>Modèle</th><th>Faiblesse à exploiter</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Family Link</strong> (Google)</td><td>Gratuit, natif</td><td>Rigide, « lâche » l'ado, ergonomie basique</td></tr>
+          <tr><td><strong>Qustodio</strong></td><td>~43–76&nbsp;€/an</td><td>Batterie, désinstallable, bugs</td></tr>
+          <tr><td><strong>Bark</strong> (US)</td><td>Alertes IA</td><td>Orienté US, pas d'agent conversationnel</td></tr>
+          <tr><td><strong>Xooloo</strong> (FR)</td><td>3–7&nbsp;€/mois</td><td>Aligné dialogue mais pas d'IA / simulation</td></tr>
+          <tr><td><strong>Kaspersky</strong></td><td>Prix bas</td><td>Éditeur russe banni US / restreint UE</td></tr>
+          <tr><td><strong>mSpy</strong></td><td>Stalkerware</td><td>Hors Play Store — notre contre-modèle</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top:16px; border-left-color: var(--pine);">
+      <p><span class="tag" style="color:var(--pine)">Vent porteur.</span> La loi française <strong>« majorité numérique à 15 ans »</strong> (votée le 22 juillet 2026, application 1<sup>er</sup> sept. 2026) et le débat sur la vérification d'âge mettent l'inquiétude parentale à son pic. Notre message <em>« privacy-first, sans identité de l'enfant »</em> est le contre-pied parfait.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">La différence</p>
+    <h2>Trois piliers que personne ne réunit</h2>
+    <div class="pillars">
+      <div class="pillar">
+        <span class="n">PILIER 01</span>
+        <h3>On parle, l'IA règle</h3>
+        <p>« Pas de TikTok en semaine avant 17h, jamais après 21h » → l'IA transforme la phrase en règle, la résume, demande confirmation. Un chat, pas 40 menus.</p>
+      </div>
+      <div class="pillar">
+        <span class="n">PILIER 02</span>
+        <h3>Tester avant d'appliquer</h3>
+        <p>Le mode simulation montre au parent, sur des exemples concrets, ce qui serait bloqué ou autorisé — avant que ça touche le téléphone de l'enfant.</p>
+      </div>
+      <div class="pillar">
+        <span class="n">PILIER 03</span>
+        <h3>Le refus devient dialogue</h3>
+        <p>L'enfant conteste (« c'est injuste »), le parent autorise → la règle s'affine automatiquement. Sans jamais réentraîner de modèle : une mémoire de règles explicable.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Comment ça marche</p>
+    <h2>Deux apps, un backend qui ne fiche rien</h2>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="ic">P</div>
+        <div><h3>App parent — le centre de contrôle</h3><p>Chat IA pour définir les règles, mode simulation, demandes d'accès, dashboard volontairement minimal (pas de timeline d'activité).</p></div>
+      </div>
+      <div class="flow-item">
+        <div class="ic">E</div>
+        <div><h3>App enfant — l'agent transparent</h3><p>Notification permanente + icône visible, écran de transparence, moteur de règles local, filtrage temps réel, bouton « je trouve ça injuste ».</p></div>
+      </div>
+      <div class="flow-item">
+        <div class="ic">UE</div>
+        <div><h3>Backend hébergé en Europe</h3><p>Appairage, synchro des règles, <em>heartbeat</em> d'alerte, IA cloud réservée aux cas ambigus. <strong>Ne reçoit jamais l'historique de navigation.</strong></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">L'IA</p>
+    <h2>Locale d'abord, cloud en dernier recours</h2>
+    <p>Un appel LLM à chaque site serait lent, coûteux, gourmand en batterie et contraire à la promesse de confidentialité. La navigation se tranche donc <strong>sur le téléphone</strong>, en cascade :</p>
+    <div class="flow">
+      <div class="flow-item"><div class="ic">0</div><div><h3>Règles + listes locales</h3><p>Horaires, catégories, allow/blocklist. Hors-ligne, gratuit, ~1&nbsp;ms. Tranche la majorité du trafic.</p></div></div>
+      <div class="flow-item"><div class="ic">1</div><div><h3>Classifieur embarqué</h3><p>Gemini&nbsp;Nano si dispo, sinon un petit modèle LiteRT. Catégorise sans que la donnée sorte du téléphone.</p></div></div>
+      <div class="flow-item"><div class="ic">2</div><div><h3>Claude Haiku, cas ambigus</h3><p>Moins de 10–15&nbsp;% du trafic. On n'envoie que des catégories — jamais l'URL brute. ~0,5–1,5&nbsp;€/enfant/mois.</p></div></div>
+    </div>
+    <p style="margin-top:18px; color:var(--ink-soft); font-size:0.92rem">Côté parent, <strong>Claude Sonnet</strong> transforme les intentions en règles structurées. On ne lui envoie que les intentions du parent, jamais des données de l'enfant.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">La vérité technique</p>
+    <h2>« Inviolable » a des limites — on les assume</h2>
+    <p class="lede">Le seul vrai verrou Android est le mode <em>Device Owner</em>, qui impose une réinitialisation du téléphone enfant à l'installation. Et même lui n'est pas absolu.</p>
+    <div class="truth">
+      <div class="cell no">
+        <span class="k">✕ Ce qu'on ne promet pas</span>
+        <p>Invisible. Inviolable à 100&nbsp;%. Un enfant déterminé avec un 2<sup>e</sup> téléphone, un bootloader déverrouillé ou un flash de ROM passe à travers.</p>
+      </div>
+      <div class="cell yes">
+        <span class="k">✓ Ce qu'on tient</span>
+        <p>Résistant, dissuasif, transparent. Et un <strong>heartbeat</strong> : si l'agent est désactivé, le parent est alerté immédiatement. La meilleure parade est humaine.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Conformité</p>
+    <h2>Publiable, et défendable</h2>
+    <div class="flow">
+      <div class="flow-item"><div class="ic">▣</div><div><h3>Play Store — anti-stalkerware</h3><p>Flag <code>isMonitoringTool</code>, notification persistante, icône claire, marketing strictement parent→enfant. Notre transparence coche déjà les cases.</p></div></div>
+      <div class="flow-item"><div class="ic">§</div><div><h3>RGPD — autorité parentale</h3><p>Base légale = protection par le parent, pas le consentement du mineur. La non-collecte de l'historique est notre meilleure minimisation.</p></div></div>
+      <div class="flow-item"><div class="ic">CNIL</div><div><h3>Proportionnalité par âge</h3><p>Mode plus léger et accord de l'ado pour les 15–17 ans. Parent toujours dans la boucle de décision.</p></div></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Le modèle</p>
+    <h2>Freemium, par famille, 1 mois offert</h2>
+    <div class="price-wrap">
+      <div class="plan">
+        <div class="name">Gratuit</div>
+        <div class="amt">0&nbsp;€</div>
+        <ul>
+          <li>1 enfant</li>
+          <li>Règles de base par IA</li>
+          <li>Temps d'écran + blocage d'apps</li>
+          <li>Demandes d'accès limitées</li>
+          <li>Transparence enfant</li>
+        </ul>
+      </div>
+      <div class="plan paid">
+        <div class="name">Famille</div>
+        <div class="amt">4,99&nbsp;€ <small>/ mois</small></div>
+        <div style="font-size:0.82rem;color:var(--ink-soft)">ou 39,99&nbsp;€/an &middot; enfants illimités</div>
+        <ul>
+          <li>Mode simulation</li>
+          <li>Boucle d'apprentissage avancée</li>
+          <li>Plannings fins par créneau</li>
+          <li>Filtrage web / contenu</li>
+          <li>Rapports hebdo de haut niveau</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:16px; color:var(--ink-soft); font-size:0.88rem">Facturation via Google&nbsp;Play (15&nbsp;% de commission via le Small Business Program). Prix volontairement bas : le concurrent de référence est gratuit — la valeur, c'est la paix à la maison.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">La route</p>
+    <h2>Du prototype au Play Store</h2>
+    <div class="road">
+      <div class="road-step now">
+        <div class="ph">Maintenant</div>
+        <h3>Cadrage &amp; décisions</h3>
+        <p>Ce document. Valider les 6 arbitrages ci-dessous, puis échafauder le projet Android.</p>
+      </div>
+      <div class="road-step">
+        <div class="ph">6–8 semaines</div>
+        <h3>Prototype</h3>
+        <p>Chat IA → règles, appairage QR, blocage d'apps, bouton « demander ». Un seul type de règle, bien fait.</p>
+      </div>
+      <div class="road-step">
+        <div class="ph">3–5 mois</div>
+        <h3>MVP publiable</h3>
+        <p>Durci et testé sur 5–10 familles réelles. Hors MVP : filtrage profond, géoloc, Device Owner, iOS.</p>
+      </div>
+      <div class="road-step">
+        <div class="ph">Ensuite</div>
+        <h3>V1 → V2</h3>
+        <p>Simulation, boucle d'apprentissage, filtrage web par catégorie, puis provisioning renforcé et iOS.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">À trancher</p>
+    <h2>Six décisions avant de coder</h2>
+    <div class="decisions">
+      <div class="decision"><p><strong>Device Owner dès le MVP</strong> <span class="q">— robuste mais reset usine, ou app standard plus simple mais contournable&nbsp;?</span></p></div>
+      <div class="decision"><p><strong>Android Management API vs DPC maison</strong> <span class="q">— rapide/dépendant de Google, ou souverain/plus lourd&nbsp;?</span></p></div>
+      <div class="decision"><p><strong>Tranche d'âge prioritaire</strong> <span class="q">— 8–12 ans (accepté) ou 13–15 ans (là où Family Link lâche)&nbsp;?</span></p></div>
+      <div class="decision"><p><strong>LLM parent on-device ou serveur UE</strong> <span class="q">— confidentialité max ou puissance&nbsp;?</span></p></div>
+      <div class="decision"><p><strong>S'appuyer sur Family Link</strong> <span class="q">— pour le socle compte, + notre couche IA&nbsp;?</span></p></div>
+      <div class="decision"><p><strong>Le nom</strong> <span class="q">— Balise, Cap, Boussole… à vérifier (INPI, domaine, package)&nbsp;?</span></p></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Document de cadrage v0.1 — synthèse d'une recherche multi-dimensions (marché, technique Android, IA, droit&nbsp;FR/RGPD, Play&nbsp;Store, produit). À faire relire par un juriste RGPD avant lancement commercial.</p>
+    <p class="repo">parental-control-app/SPEC.md &middot; branche claude/parental-control-ai-app-buwqbb</p>
+  </footer>
+
+</main>
