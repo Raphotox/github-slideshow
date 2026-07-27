@@ -1,0 +1,14 @@
+{
+  "name": "@parental-control/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic rule engine for the AI parental-control app (reference implementation, mirrored on-device in Kotlin).",
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/engine.test.ts",
+    "demo": "node --experimental-strip-types demo.ts"
+  },
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

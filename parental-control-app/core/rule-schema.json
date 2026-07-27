@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://parental-control.app/schemas/ruleset-v1.json",
+  "title": "RuleSet",
+  "description": "Canonical, versioned rule set shared by the child enforcer, the parent simulator and the backend.",
+  "type": "object",
+  "required": ["schemaVersion", "childAgeBand", "timezone", "defaultPosture", "rules"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "childAgeBand": { "type": "string", "enum": ["8-10", "11-12", "13-15", "16-17"] },
+    "timezone": { "type": "string", "description": "IANA timezone, e.g. Europe/Paris" },
+    "defaultPosture": { "type": "string", "enum": ["strict", "balanced", "open"] },
+    "rules": { "type": "array", "items": { "$ref": "#/$defs/rule" } }
+  },
+  "$defs": {
+    "action": { "type": "string", "enum": ["allow", "block", "ask"] },
+    "weekday": { "type": "string", "enum": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] },
+    "hhmm": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" },
+    "timeRange": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "description": "Local time window. start > end spans midnight (e.g. 21:00 -> 07:00).",
+      "properties": { "start": { "$ref": "#/$defs/hhmm" }, "end": { "$ref": "#/$defs/hhmm" } }
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "days": { "type": "array", "items": { "$ref": "#/$defs/weekday" } },
+        "timeRanges": { "type": "array", "items": { "$ref": "#/$defs/timeRange" } }
+      }
+    },
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A rule matches a target if ANY specified criterion matches.",
+      "properties": {
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "domains": { "type": "array", "items": { "type": "string" } },
+        "apps": { "type": "array", "items": { "type": "string" } },
+        "appCategories": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "required": ["id", "description", "enabled", "priority", "action", "match"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "priority": { "type": "integer", "description": "Higher wins; learning-loop overrides use high values." },
+        "action": { "$ref": "#/$defs/action" },
+        "match": { "$ref": "#/$defs/match" },
+        "schedule": { "$ref": "#/$defs/schedule" },
+        "origin": { "type": "string", "enum": ["default", "parent", "learning"] }
+      }
+    }
+  }
+}
