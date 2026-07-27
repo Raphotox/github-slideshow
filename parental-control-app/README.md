@@ -12,6 +12,7 @@ Android d'abord, marché français d'abord.
 | **[`SPEC.md`](SPEC.md)** | Spécification produit & architecture technique complète (14 sections). |
 | **[`pitch.html`](pitch.html)** | Page de présentation lisible (vision, marché, archi, prix, roadmap). |
 | **[`core/`](core/)** | Le moteur de règles — implémentation de référence, testée (`npm test`). |
+| **[`parent-agent/`](parent-agent/)** | L'agent conversationnel : langage naturel → règles (Claude Sonnet 5), testé. |
 
 ## Le principe en une phrase
 
@@ -25,8 +26,10 @@ applique des règles que le parent définit **en parlant à une IA**, teste dans
 - [x] Cadrage : marché, différenciation, architecture, conformité, business model
 - [x] Moteur de règles (référence TypeScript, 11 tests) : évaluation déterministe,
       adaptativité à l'âge, mode simulation, boucle d'apprentissage
+- [x] Agent conversationnel parent (langage naturel → règles, 6 tests) : opérations
+      structurées, applier déterministe, client Claude Sonnet 5 prêt à brancher
 - [ ] Backend UE (appairage, sync règles, heartbeat, IA cloud)
-- [ ] App parent (chat IA + simulation + demandes d'accès)
+- [ ] App parent (chat IA + simulation + demandes d'accès) — UI
 - [ ] App enfant (agent transparent + blocage + bouton « demander »)
 - [ ] Portage du moteur en Kotlin on-device
 

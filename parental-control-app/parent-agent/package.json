@@ -1,0 +1,21 @@
+{
+  "name": "@parental-control/parent-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Parent-side conversational agent: turns natural-language intentions into validated rule operations (Claude Sonnet 5 + structured outputs).",
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/ruleops.test.ts"
+  },
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/sdk": ">=0.60.0"
+  },
+  "peerDependenciesMeta": {
+    "@anthropic-ai/sdk": {
+      "optional": true
+    }
+  }
+}
