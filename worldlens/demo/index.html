@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>WorldLens — prototype</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: #000; font-family: -apple-system, system-ui, sans-serif; color: #fff; }
+  #video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #overlay { position: fixed; inset: 0; overflow: hidden; }
+
+  .bubble {
+    position: absolute; transform: translate(-50%, -100%);
+    background: rgba(20,20,25,.78); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.22); border-radius: 18px;
+    padding: 8px 13px; max-width: 62vw;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.45);
+    transition: left .25s linear, top .25s linear, opacity .3s;
+    cursor: pointer; user-select: none; -webkit-user-select: none;
+  }
+  .bubble::after {
+    content: ""; position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%);
+    border: 7px solid transparent; border-bottom: none; border-top: 7px solid rgba(20,20,25,.78);
+  }
+  .bubble .emoji { font-size: 20px; }
+  .bubble .txt { display: flex; flex-direction: column; min-width: 0; }
+  .bubble .name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bubble .dist { font-size: 11px; opacity: .7; }
+
+  #hud {
+    position: fixed; top: env(safe-area-inset-top, 10px); left: 0; right: 0;
+    display: flex; justify-content: center; pointer-events: none; padding-top: 10px;
+  }
+  #hud span {
+    background: rgba(0,0,0,.5); border-radius: 999px; padding: 5px 14px;
+    font-size: 12px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+
+  #card {
+    position: fixed; left: 0; right: 0; bottom: 0; max-height: 72%;
+    background: rgba(18,18,22,.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius: 22px 22px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(105%); transition: transform .3s cubic-bezier(.3,.9,.3,1);
+    overflow-y: auto; z-index: 10;
+  }
+  #card.open { transform: translateY(0); }
+  #card .grab { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.3); margin: 0 auto 14px; }
+  #card h2 { font-size: 20px; margin-bottom: 2px; }
+  #card .meta { font-size: 13px; opacity: .65; margin-bottom: 12px; }
+  #card img.thumb { width: 100%; max-height: 180px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; }
+  #card p { font-size: 15px; line-height: 1.5; margin-bottom: 14px; }
+  #card .src { font-size: 12px; opacity: .6; margin-bottom: 6px; }
+  #card a.more {
+    display: inline-block; background: #fff; color: #000; font-weight: 600; font-size: 14px;
+    padding: 10px 18px; border-radius: 999px; text-decoration: none;
+  }
+
+  #start {
+    position: fixed; inset: 0; z-index: 20; background: #0b0b0f;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 32px; gap: 14px;
+  }
+  #start h1 { font-size: 30px; }
+  #start p { font-size: 15px; opacity: .75; line-height: 1.5; max-width: 320px; }
+  #start button {
+    margin-top: 10px; background: #fff; color: #000; border: 0; border-radius: 999px;
+    font-size: 17px; font-weight: 700; padding: 14px 34px; cursor: pointer;
+  }
+  #start .note { font-size: 12px; opacity: .5; max-width: 300px; }
+  #err { color: #ff7b7b; font-size: 13px; max-width: 320px; }
+</style>
+</head>
+<body>
+<video id="video" autoplay muted playsinline></video>
+<div id="overlay"></div>
+<div id="hud"><span id="hudtxt">—</span></div>
+
+<div id="card">
+  <div class="grab"></div>
+  <div id="cardBody"></div>
+</div>
+
+<div id="start">
+  <h1>🌍 WorldLens</h1>
+  <p>Prototype « étage 0 » : caméra + GPS + boussole. Les lieux notables autour de toi apparaissent en bulles, ancrées sur leur direction réelle. Touche une bulle pour la fiche.</p>
+  <p class="note">Autorise la caméra, la position et les capteurs de mouvement. Fonctionne sur téléphone, en HTTPS. Données : Wikipédia (géosearch temps réel).</p>
+  <button id="go">Démarrer</button>
+  <div id="err"></div>
+</div>
+
+<script>
+(() => {
+  const FOV = 62;               // champ de vision horizontal supposé (degrés)
+  const RADIUS = 900;           // rayon de recherche des POI (m)
+  const MAX_BUBBLES = 5;        // décision D2 : lisibilité avant tout
+  const state = { lat: null, lon: null, heading: null, pois: [], bubbles: new Map(), lastFetch: 0 };
+
+  const $ = id => document.getElementById(id);
+  const overlay = $('overlay'), hud = $('hudtxt'), card = $('card'), cardBody = $('cardBody');
+
+  const EMOJIS = [
+    [/cath|égli|chapel|basil|abbay|temple|mosq|synag/i, '⛪'],
+    [/château|palais|fort/i, '🏰'],
+    [/musée|galerie/i, '🖼️'],
+    [/gare|métro|station/i, '🚉'],
+    [/parc|jardin|square|bois/i, '🌳'],
+    [/pont/i, '🌉'],
+    [/théâtre|opéra|cinéma/i, '🎭'],
+    [/statue|monument|mémorial|obélisque|colonne/i, '🗽'],
+    [/place|esplanade/i, '🏛️'],
+    [/hôtel|palace/i, '🏨'],
+    [/tour /i, '🗼'],
+    [/université|école|lycée|collège/i, '🎓'],
+    [/marché|halle/i, '🛒'],
+    [/stade|piscine|gymnase/i, '🏟️'],
+    [/rue |avenue|boulevard|quai /i, '🛣️'],
+  ];
+  const emojiFor = n => (EMOJIS.find(([re]) => re.test(n)) || [null, '📍'])[1];
+
+  const toRad = d => d * Math.PI / 180;
+  function distBearing(lat1, lon1, lat2, lon2) {
+    const φ1 = toRad(lat1), φ2 = toRad(lat2), Δφ = toRad(lat2 - lat1), Δλ = toRad(lon2 - lon1);
+    const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+    const d = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const y = Math.sin(Δλ)*Math.cos(φ2);
+    const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+    return { dist: d, bearing: (Math.atan2(y, x) * 180 / Math.PI + 360) % 360 };
+  }
+
+  async function fetchPOIs() {
+    if (state.lat == null) return;
+    const now = Date.now();
+    if (now - state.lastFetch < 20000 && state.pois.length) return;  // cache 20 s
+    state.lastFetch = now;
+    const lang = (navigator.language || 'fr').startsWith('fr') ? 'fr' : 'en';
+    const url = `https://${lang}.wikipedia.org/w/api.php?action=query&list=geosearch` +
+      `&gscoord=${state.lat}%7C${state.lon}&gsradius=${RADIUS}&gslimit=40&format=json&origin=*`;
+    try {
+      const r = await fetch(url);
+      const j = await r.json();
+      state.pois = (j.query?.geosearch || []).map(p => ({
+        id: p.pageid, title: p.title, lat: p.lat, lon: p.lon, lang
+      }));
+      hud.textContent = `${state.pois.length} lieux détectés autour de toi`;
+    } catch (e) { hud.textContent = 'Réseau indisponible — réessai…'; state.lastFetch = 0; }
+  }
+
+  function render() {
+    requestAnimationFrame(render);
+    if (state.lat == null || state.heading == null || !state.pois.length) return;
+
+    // score de saillance simple : proche = mieux ; centré = mieux
+    const scored = state.pois.map(p => {
+      const { dist, bearing } = distBearing(state.lat, state.lon, p.lat, p.lon);
+      let delta = ((bearing - state.heading + 540) % 360) - 180;   // -180..180
+      return { ...p, dist, delta, visible: Math.abs(delta) < FOV / 2 && dist > 15,
+               score: (1 - Math.min(dist, RADIUS)/RADIUS) * (1 - Math.abs(delta)/(FOV/2)) };
+    }).filter(p => p.visible).sort((a, b) => b.score - a.score).slice(0, MAX_BUBBLES);
+
+    const keep = new Set(scored.map(p => p.id));
+    for (const [id, el] of state.bubbles) if (!keep.has(id)) { el.remove(); state.bubbles.delete(id); }
+
+    const W = innerWidth, H = innerHeight;
+    scored.forEach((p, i) => {
+      let el = state.bubbles.get(p.id);
+      if (!el) {
+        el = document.createElement('div');
+        el.className = 'bubble';
+        el.innerHTML = `<span class="emoji">${emojiFor(p.title)}</span>
+          <span class="txt"><span class="name">${p.title}</span><span class="dist"></span></span>`;
+        el.addEventListener('click', () => openCard(p));
+        overlay.appendChild(el);
+        state.bubbles.set(p.id, el);
+      }
+      const x = W/2 + (p.delta / (FOV/2)) * (W/2) * 0.92;
+      const y = H * (0.30 + 0.38 * Math.min(p.dist, RADIUS)/RADIUS) + (i % 2) * 46; // loin = plus haut ; anti-chevauchement naïf
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.querySelector('.dist').textContent = p.dist < 1000 ? Math.round(p.dist) + ' m' : (p.dist/1000).toFixed(1) + ' km';
+    });
+  }
+
+  async function openCard(p) {
+    cardBody.innerHTML = `<h2>${emojiFor(p.title)} ${p.title}</h2><div class="meta">chargement…</div>`;
+    card.classList.add('open');
+    try {
+      const r = await fetch(`https://${p.lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(p.title)}`);
+      const j = await r.json();
+      cardBody.innerHTML = `
+        <h2>${emojiFor(p.title)} ${j.title || p.title}</h2>
+        <div class="meta">${j.description || ''} · à ${p.dist < 1000 ? Math.round(p.dist)+' m' : (p.dist/1000).toFixed(1)+' km'}</div>
+        ${j.thumbnail ? `<img class="thumb" src="${j.thumbnail.source}" alt="">` : ''}
+        <p>${j.extract || 'Pas de résumé disponible.'}</p>
+        <div class="src">Source : Wikipédia (CC BY-SA)</div>
+        <a class="more" href="${j.content_urls?.mobile?.page || '#'}" target="_blank" rel="noopener">⭐ En savoir plus</a>`;
+    } catch (e) {
+      cardBody.querySelector('.meta').textContent = 'Impossible de charger la fiche.';
+    }
+  }
+  card.addEventListener('click', e => { if (e.target === card || e.target.classList.contains('grab')) card.classList.remove('open'); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) card.classList.remove('open'); });
+
+  function onOrientation(e) {
+    if (typeof e.webkitCompassHeading === 'number') {           // iOS : cap boussole direct
+      state.heading = e.webkitCompassHeading;
+    } else if (e.absolute && e.alpha != null) {                 // Android : orientation absolue
+      state.heading = (360 - e.alpha) % 360;
+    } else if (e.alpha != null && state.heading == null) {
+      state.heading = (360 - e.alpha) % 360;                    // dégradé : mieux que rien
+    }
+  }
+
+  async function start() {
+    const err = $('err');
+    try {
+      // 1. capteurs de mouvement (iOS exige une demande explicite sur geste utilisateur)
+      if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
+        const p = await DeviceOrientationEvent.requestPermission();
+        if (p !== 'granted') throw new Error('Capteurs de mouvement refusés.');
+      }
+      addEventListener('deviceorientationabsolute', onOrientation, true);
+      addEventListener('deviceorientation', onOrientation, true);
+
+      // 2. caméra arrière
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      $('video').srcObject = stream;
+
+      // 3. position
+      navigator.geolocation.watchPosition(pos => {
+        state.lat = pos.coords.latitude; state.lon = pos.coords.longitude;
+        fetchPOIs();
+      }, e => { hud.textContent = 'Position indisponible : ' + e.message; },
+        { enableHighAccuracy: true, maximumAge: 5000 });
+
+      $('start').remove();
+      hud.textContent = 'Recherche des lieux autour de toi…';
+      setInterval(fetchPOIs, 25000);
+      render();
+    } catch (e) {
+      err.textContent = e.message || String(e);
+    }
+  }
+  $('go').addEventListener('click', start);
+})();
+</script>
+</body>
+</html>
